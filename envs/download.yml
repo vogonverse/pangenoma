@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - python >=3.9
-  - ncbi-genome-download >=0.3.3
+  - ncbi-datasets-cli  # Herramienta oficial del NCBI 
+  - unzip            
   - requests
   - tqdm
