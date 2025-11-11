@@ -1,0 +1,22 @@
+name: pangenoma_r
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # R base
+  - r-base>=4.0
+  
+  # R packages for phylogenetics
+  - r-caper          # Comparative analyses (phylo.d statistic)
+  - r-phytools       # Phylogenetic tools (midpoint.root, makeLabel)
+  - r-ape            # Phylogenetic analysis (read.tree)
+  
+  # R packages for utilities
+  - r-getopt         # Command line argument parsing
+  - r-future         # Parallel processing
+  - r-stringr        # String manipulation
+  
+  # Additional utilities
+  - r-flock          # File locking for parallel writes
