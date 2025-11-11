@@ -1,0 +1,10 @@
+name: download
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python >=3.9
+  - ncbi-genome-download >=0.3.3
+  - requests
+  - tqdm
