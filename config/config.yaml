@@ -1,0 +1,40 @@
+# Configuración del Pipeline PanForest (SIN FILOGENIA)
+# ====================================================
+
+# Archivos de entrada
+input:
+  gene_presence_absence: "data/raw/example_gene_presence_absence.csv"
+  phylogeny: null  # por ahora no tenemos .tree
+
+# Parámetros del preprocesamiento
+preprocessing:
+  roary_format: false  # true si viene de Roary, false si viene de Panaroo
+  
+# Parámetros del Random Forest
+random_forest:
+  n_trees: 100         # Para TEST 100, para hacerlo de verdad 1000
+  max_depth: 8         
+  min_present: 1.0     
+  min_absent: 1.0      
+  n_threads: 4         
+  purity: null         
+
+# Parámetros de simplificación
+network:
+  importance_threshold: 0.01
+
+# Parámetros del estadístico D (DESACTIVADO = skip en true)
+phylogeny:
+  d_permutations: 1000
+  cores: 4
+  skip: true  # PARA activar/DESAcTIVAR
+
+# Parámetros de filtrado (sin D)
+filtering:
+  d_threshold: -999  # Valor bajo para no filtrar por D
+  f1_threshold: 0.8  # Solo filtrar por F1
+
+# Clustering
+clustering:
+  method: "louvain"
+  edge_type: null
