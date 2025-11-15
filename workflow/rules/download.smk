@@ -7,6 +7,7 @@ This module handles:
 """
 
 
+
 rule query_ncbi_metadata:
     """Get metadata from NCBI without downloading genomes"""
     output:
@@ -23,19 +24,22 @@ rule query_ncbi_metadata:
 
 
 
-
-
-
-
-
-
-
-
-
 # ============================================
-# RULE: download_genomes
+# RULE: deduplicate genomes
 # ============================================
-
+rule deduplicate_assemblies:
+    """Deduplicate GCA vs GCF (prefer GCA)"""
+    input:
+        metadata = "data/raw/genomes/ncbi_metadata.jsonl"
+    output:
+        accessions = "data/raw/genomes/accessions_filtered.txt",
+        stats = "data/raw/genomes/deduplication_stats.txt"
+    conda:
+        "../../envs/download.yml"
+    log:
+        "logs/download/deduplicate.log"
+    script:
+        "../scripts/filter_metadata.py"
 
 
 # ============================================
