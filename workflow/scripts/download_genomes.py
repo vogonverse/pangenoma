@@ -1,42 +1,45 @@
 
-"""Download genomes from NCBI using dehydrated datasets (for large downloads)"""
+#!/usr/bin/env python3
+"""
+Download only the deduplicated genomes.
+Uses accession list from deduplication.
+"""
 import subprocess
-import sys
-from pathlib import Path
 import shutil
-import json
+from pathlib import Path
 
 def main():
-    # Params from Snakemake
-    taxid = snakemake.params.taxid
-    assembly_levels = snakemake.params.assembly_levels
+    accessions_file = snakemake.input.accessions
     outdir = snakemake.params.outdir
     flag_file = snakemake.output.flag
     metadata_file = snakemake.output.metadata
     
-    print(f"Downloading genomes (taxid: {taxid}, levels: {assembly_levels})...")
-    
-    # Create output directory
     Path(outdir).mkdir(parents=True, exist_ok=True)
     
     zip_file = Path(outdir) / "genomes.zip"
     extract_dir = Path(outdir) / "extracted"
     
+    # Count accessions
+    with open(accessions_file) as f:
+        n_accessions = len([line for line in f if line.strip()])
+    
+    print(f"Downloading {n_accessions} deduplicated genomes...")
+    
     # ========================================
-    # STEP 1: Download DEHYDRATED package
+    # STEP 1: Download DEHYDRATED data
     # ========================================
     print("Step 1/3: Downloading dehydrated package...")
     cmd = [
-        "datasets", "download", "genome", "taxon", taxid,
-        "--assembly-level", ",".join(assembly_levels),
+        "datasets", "download", "genome", "accession",
+        "--inputfile", str(accessions_file),
         "--include", "gff3,genome",
-        "--dehydrated",  # Metadata only
+        "--dehydrated",
         "--filename", str(zip_file)
     ]
     subprocess.run(cmd, check=True)
     
     # ========================================
-    # STEP 2: Unzip
+    # STEP 2: Unzip 
     # ========================================
     print("Step 2/3: Extracting zip archive...")
     subprocess.run([
@@ -45,7 +48,7 @@ def main():
     ], check=True)
     
     # ========================================
-    # STEP 3: Rehydrate (download actual data)
+    # STEP 3: Rehydrate
     # ========================================
     print("Step 3/3: Rehydrating (downloading sequence data)...")
     subprocess.run([
@@ -64,13 +67,11 @@ def main():
         if not accession_dir.is_dir():
             continue
         
-        # Find GFF file
         gff_candidates = list(accession_dir.glob("*.gff*"))
         if not gff_candidates:
             print(f"Warning: No GFF found for {accession_dir.name}")
             continue
         
-        # Copy to final location
         accession = accession_dir.name
         dest_dir = Path(outdir) / "genomes" / accession
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -79,31 +80,15 @@ def main():
         shutil.copy2(gff_candidates[0], dest_gff)
         gff_files.append(dest_gff)
     
-    # ========================================
-    # Cleanup temporary files
-    # ========================================
-    print("Cleaning temporary files...")
+    # Cleanup
+    print("Cleaning up...")
     shutil.rmtree(extract_dir)
-    zip_file.unlink()  # Delete zip
+    zip_file.unlink()
     
-    # ========================================
-    # Write metadata
-    # ========================================
-    with open(metadata_file, 'w') as f:
-        f.write("accession\tpath\n")
-        for gff in gff_files:
-            f.write(f"{gff.parent.name}\t{gff}\n")
     
-    # Write flag
     Path(flag_file).touch()
     
-    # ========================================
-    # Final report
-    # ========================================
-    print(f"\n✓ Downloaded {len(gff_files)} genomes to {outdir}/genomes/")
-    
-    if len(gff_files) == 0:
-        sys.exit("ERROR: No genomes downloaded")
+    print(f"\nDownloaded {len(gff_files)} genomes to {outdir}/genomes/")
 
 if __name__ == "__main__":
     main()
