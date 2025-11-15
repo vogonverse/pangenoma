@@ -1,0 +1,334 @@
+# workflow/Snakefile
+# ============================================
+# Snakefile Principal - PanForest Pipeline
+# ============================================
+
+configfile: "config/config.yaml"
+
+# ============================================
+# MODO DE OPERACIÓN Y VARIABLES GLOBALES
+# ============================================
+MODE = config.get("mode", "example")
+SKIP_PHYLOGENY = config["phylogeny"]["skip"]
+GENERATE_DATABASE = config["outputs"].get("generate_database", False)
+GENERATE_CLUSTERS = config["outputs"].get("generate_clusters", True)
+GENERATE_REPORTS = config["outputs"].get("generate_reports", False)
+
+# ============================================
+# INCLUIR REGLAS MODULARES SEGÚN MODO
+# ============================================
+
+# SIEMPRE incluir (ambos modos)
+include: "rules/preprocessing.smk"
+include: "rules/random_forest.smk"
+include: "rules/network_analysis.smk"
+
+# Solo modo FULL
+if MODE == "full":
+    include: "rules/download.smk"
+    # include: "rules/pangenome.smk"     # TODO: implementar
+    # include: "rules/phylogeny_build.smk"  # TODO: implementar
+
+# Incluir phylogeny analysis si no está en skip
+if not SKIP_PHYLOGENY:
+    include: "rules/phylogeny.smk"
+
+# Incluir database si está activado
+if GENERATE_DATABASE:
+    include: "rules/database.smk"
+
+# ============================================
+# REGLA ALL (Target final según modo y config)
+# ============================================
+
+def get_all_targets():
+    """Determina qué targets ejecutar en función del modo y la config"""
+    targets = []
+    
+    # === MODO FULL: Descarga y pangenoma ===
+    if MODE == "full":
+        targets.extend([
+               # 
+            "data/raw/genomes/gff_files.txt",         # 
+            "data/raw/genomes/validation_report.txt", # 
+        ])
+        # TODO: cuando esté el pangenome hecho
+        # targets.append("results/panaroo/gene_presence_absence.csv")
+        # targets.append("results/phylogeny/strain_phylogeny.tree")
+    
+    # === 1. Preprocesamiento (SIEMPRE) ===
+    targets.extend([
+        "data/interim/collapsed_matrix.csv",
+        "data/interim/constant_genes.txt",
+        "data/interim/core_genes.txt",
+        "data/interim/singletons.txt",
+        "data/interim/non_unique_genes.csv",      # ← AÑADIDO
+        "data/interim/non_unique_genomes.csv",    # ← AÑADIDO
+    ])
+    
+    # === 2. Random Forest (SIEMPRE) ===
+    targets.extend([
+        "results/random_forest/imp.csv",
+        "results/random_forest/performance.csv",
+    ])
+    
+    # === 3. Red de genes (SIEMPRE) ===
+    targets.extend([
+        "results/networks/simplified_imp.csv",
+        "results/networks/cytoscape_network.csv",
+        "results/networks/directed_network.csv",
+    ])
+    
+    # === 4. Análisis filogenético (CONDICIONAL) ===
+    if not SKIP_PHYLOGENY:
+        targets.extend([
+            "results/phylogeny/d_statistics.tsv",
+            # "results/phylogeny/d_summary.txt",  # TODO: si se implementa
+        ])
+    
+    # === 5. Clustering (CONDICIONAL) ===
+    if GENERATE_CLUSTERS:
+         targets.append("results/clusters/.done")  # 
+    
+    # === 6. Base de datos (CONDICIONAL) ===
+    if GENERATE_DATABASE:
+        targets.extend([
+            "results/database/nodes_table.csv",
+            "results/database/edges_table.csv",
+            "results/database/network.db",
+        ])
+    
+    # === 7. Reportes (CONDICIONAL) ===
+    if GENERATE_REPORTS:
+        # targets.append("results/reports/pipeline_summary.html")
+        pass  # TODO: implementar
+    
+    return targets
+
+rule all:
+    input:
+        get_all_targets()
+
+# ============================================
+# REGLAS PARCIALES (testing)
+# ============================================
+
+if MODE == "full":
+    rule only_download:
+        """Solo descarga genomas"""
+        input:
+            "data/raw/genomes/.download_complete",
+            "data/raw/genomes/validation_report.txt"
+
+rule only_preprocessing:
+    """Solo ejecuta el preprocesamiento"""
+    input:
+        "data/interim/collapsed_matrix.csv",
+        "data/interim/non_unique_genes.csv"
+
+rule only_random_forest:
+    """Solo ejecuta Random Forest"""
+    input:
+        "results/random_forest/imp.csv",
+        "results/random_forest/performance.csv"
+
+rule only_network:
+    """Solo crea la red de genes"""
+    input:
+        "results/networks/directed_network.csv"
+
+if not SKIP_PHYLOGENY:
+    rule only_phylogeny:
+        """Solo calcula estadísticos D"""
+        input:
+            "results/phylogeny/d_statistics.tsv"
+
+if GENERATE_DATABASE:
+    rule only_database:
+        """Solo crea la base de datos"""
+        input:
+            "results/database/network.db"
+
+# ============================================
+# REGLAS UTILS
+# ============================================
+
+rule dag:
+    """Genera gráfico del workflow"""
+    output:
+        "results/reports/dag.png"
+    shell:
+        """
+        mkdir -p results/reports
+        snakemake --dag | dot -Tpng > {output}
+        """
+
+rule rulegraph:
+    """Genera gráfico simplificado del workflow"""
+    output:
+        "results/reports/rulegraph.png"
+    shell:
+        """
+        mkdir -p results/reports
+        snakemake --rulegraph | dot -Tpng > {output}
+        """
+
+rule clean:
+    """Limpia resultados intermedios (mantiene genomas)"""
+    shell:
+        """
+        echo "🧹 Limpiando archivos intermedios..."
+        rm -rf data/interim/*
+        rm -rf results/random_forest/*
+        rm -rf results/networks/*
+        rm -rf results/phylogeny/*
+        rm -rf results/clusters/*
+        rm -rf results/database/*
+        rm -rf results/reports/*
+        rm -rf logs/*
+        rm -rf .snakemake/
+        echo "✅ Proyecto limpiado (genomas preservados)"
+        """
+
+rule clean_all:
+    """Limpia TODO incluyendo genomas descargados"""
+    shell:
+        """
+        echo "🧹 Limpiando TODO el proyecto..."
+        rm -rf data/interim/*
+        rm -rf data/processed/*
+        rm -rf data/raw/genomes/*           # 
+        rm -rf results/*
+        rm -rf logs/*
+        rm -rf benchmarks/*                 # 
+        rm -rf .snakemake/
+        echo "✅ Proyecto completamente limpiado"
+        """
+
+rule reset:
+    """Resetea solo los genomas descargados (útil para re-descargar)"""
+    shell:
+        """
+        echo "🔄 Reseteando descarga de genomas..."
+        rm -rf data/raw/genomes/*
+        echo "✅ Listo para re-descargar"
+        """
+
+# ============================================
+# MENSAJES INFORMATIVOS
+# ============================================
+
+onstart:
+    import sys
+    
+    print("=" * 70)
+    print(" 🧬 PanForest Pipeline - INICIANDO ANÁLISIS")
+    print("=" * 70)
+    print(f"📋 Modo: {MODE.upper()}")
+    
+    if MODE == "example":
+        print("   (Usando datos del repo original para testing)")
+    elif MODE == "full":
+        # Determinar cuántos genomas se descargarán
+        max_genomes = config["download"].get("max_genomes")
+        if max_genomes:
+            print(f"   (Descarga limitada: máximo {max_genomes} genomas)")
+        else:
+            print(f"   (Descarga completa: todos los genomas disponibles)")
+        print(f"   Organismo: {config['download']['organism']}")
+        print(f"   TaxID: {config['download']['taxid']}")
+        print(f"   Assembly levels: {', '.join(config['download']['assembly_levels'])}")
+    
+    print(f"")
+    print(f"📁 Datos de entrada:")
+    print(f"   - Matriz: {config['input']['gene_presence_absence']}")
+    if config['input']['phylogeny']:
+        print(f"   - Filogenia: {config['input']['phylogeny']}")
+    else:
+        print(f"   - Filogenia: No disponible")
+    
+    print(f"")
+    print(f"🔧 Módulos activos:")
+    print(f"   - Preprocesamiento: ✅")
+    print(f"   - Random Forest: ✅ ({config['random_forest']['n_trees']} árboles, depth={config['random_forest']['max_depth']})")
+    print(f"   - Network Analysis: ✅ (threshold={config['network']['importance_threshold']})")
+    print(f"   - Phylogeny (D stat): {'❌ SKIP' if SKIP_PHYLOGENY else '✅'}")
+    print(f"   - Clustering: {'✅ (' + config['clustering']['method'] + ')' if GENERATE_CLUSTERS else '❌'}")
+    print(f"   - Database: {'✅' if GENERATE_DATABASE else '❌'}")
+    
+    if MODE == "full":
+        print(f"")
+        print(f"⚙️  Parámetros de descarga:")
+        print(f"   - Output dir: {config['download']['outdir']}")
+    
+    print("=" * 70)
+    print("")
+
+onsuccess:
+    import os
+    
+    print("")
+    print("=" * 70)
+    print("✅ PanForest Pipeline - EJECUCIÓN COMPLETADA CON ÉXITO")
+    print("=" * 70)
+    print("")
+    print("📊 Resultados disponibles en:")
+    
+    if MODE == "full":
+        print("")
+        print("   🧬 Datos crudos:")
+        print("      - Genomas: data/raw/genomes/genomes/")
+        print("      - Metadata: data/raw/genomes/metadata.tsv")
+        
+        # Contar genomas descargados
+        import glob
+        gff_files = glob.glob("data/raw/genomes/genomes/*/*.gff")
+        print(f"      - Total genomas: {len(gff_files)}")
+        
+        # TODO: cuando implementes panaroo
+        # print("      - Panaroo: results/panaroo/")
+        # print("      - Filogenia: results/phylogeny/strain_phylogeny.tree")
+    
+    print("")
+    print("   📈 Análisis:")
+    print("      - Matriz procesada: data/interim/collapsed_matrix.csv")
+    print("      - Random Forest: results/random_forest/")
+    print("      - Redes: results/networks/")
+    
+    if not SKIP_PHYLOGENY and os.path.exists("results/phylogeny/d_statistics.tsv"):
+        print("      - Estadístico D: results/phylogeny/d_statistics.tsv")
+    
+    if GENERATE_CLUSTERS and os.path.exists("results/clusters"):
+        n_clusters = len([d for d in os.listdir("results/clusters") 
+                          if os.path.isdir(os.path.join("results/clusters", d))])
+        print(f"      - Clusters: results/clusters/ ({n_clusters} clusters)")
+    
+    if GENERATE_DATABASE and os.path.exists("results/database/network.db"):
+        print("")
+        print("   💾 Base de datos:")
+        print("      - SQLite DB: results/database/network.db")
+        print("")
+        print("      Consulta con:")
+        print("        sqlite3 results/database/network.db")
+        print("        > SELECT COUNT(*) FROM nodes;")
+    
+    print("")
+    print("=" * 70)
+
+onerror:
+    print("")
+    print("=" * 70)
+    print("❌ PanForest Pipeline - ERROR EN LA EJECUCIÓN")
+    print("=" * 70)
+    print("")
+    print("🔍 Diagnóstico:")
+    print("   1. Revisa los logs en: logs/")
+    print("   2. Verifica el último paso ejecutado")
+    print("   3. Ejecuta 'snakemake -n' para ver qué reglas faltan")
+    print("")
+    print("💡 Comandos útiles:")
+    print("   - Ver reglas pendientes: snakemake -n")
+    print("   - Ver DAG: snakemake --dag | dot -Tpng > dag.png")
+    print("   - Limpiar y reintentar: snakemake clean && snakemake --cores 4")
+    print("")
+    print("=" * 70)
