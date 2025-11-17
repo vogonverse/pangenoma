@@ -10,22 +10,38 @@ import rf_module as rf
 
 
 def get_args():
-    """Get user arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--infile", dest = "infile",
-                        type = str, help = "input file")
-    parser.add_argument("-r", "--roary", dest = "roary",
-                        help = "toggle for roary input",
-                        action = "store_true")
-    parser.add_argument("-o", "--output", dest = "outfile",
-                        type = str, help = "Output matrix file")
-    args = parser.parse_args()
-    if None in [args.infile, args.outfile]:
-        parser.print_help(sys.stderr)
-        sys.exit(0)
-    return [args.infile, args.outfile, args.roary]
+    """Get arguments from Snakemake or command line."""
+    # Check if running from Snakemake
+    try:
+        infile = snakemake.input.matrix
+        outfile = snakemake.output.collapsed
+        roary = snakemake.params.roary_format
+        # Get output paths for auxiliary files
+        output_paths = {
+            'constant': snakemake.output.constant,
+            'core': snakemake.output.core,
+            'singletons': snakemake.output.singletons,
+            'non_unique_genes': snakemake.output.non_unique_genes,
+            'non_unique_genomes': snakemake.output.non_unique_genomes
+        }
+        return [infile, outfile, roary, output_paths]
+    except NameError:
+        # Running from command line
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-i", "--infile", dest = "infile",
+                            type = str, help = "input file")
+        parser.add_argument("-r", "--roary", dest = "roary",
+                            help = "toggle for roary input",
+                            action = "store_true")
+        parser.add_argument("-o", "--output", dest = "outfile",
+                            type = str, help = "Output matrix file")
+        args = parser.parse_args()
+        if None in [args.infile, args.outfile]:
+            parser.print_help(sys.stderr)
+            sys.exit(0)
+        return [args.infile, args.outfile, args.roary, None]
 
-def write_gene_lists(matrix):
+def write_gene_lists(matrix, output_paths=None):
     """
     Write the files - singletons.txt, core_genes.txt, constant_genes.txt.
     """
@@ -33,18 +49,24 @@ def write_gene_lists(matrix):
     threshold = math.ceil(0.05 * matrix.shape[1])
     core = list(matrix[matrix.sum(axis = 1) >= threshold].index)
     singletons = list(matrix[matrix.sum(axis = 1) == 1].index)
-    with open("constant_genes.txt", "w", encoding = "utf-8") as out:
+
+    # Use output_paths if provided (from Snakemake), otherwise use current directory
+    constant_file = output_paths['constant'] if output_paths else "constant_genes.txt"
+    core_file = output_paths['core'] if output_paths else "core_genes.txt"
+    singletons_file = output_paths['singletons'] if output_paths else "singletons.txt"
+
+    with open(constant_file, "w", encoding = "utf-8") as out:
         out.write("\n".join(constant))
-    with open("core_genes.txt", "w", encoding = "utf-8") as out:
+    with open(core_file, "w", encoding = "utf-8") as out:
         out.write("\n".join(core))
-    with open("singletons.txt", "w", encoding = "utf-8") as out:
+    with open(singletons_file, "w", encoding = "utf-8") as out:
         out.write("\n".join(singletons))
 
     matrix = matrix.drop(index = constant)
     matrix = matrix.drop(index = singletons)
     return matrix
 
-def collapse_genes(matrix):
+def collapse_genes(matrix, output_paths=None):
     """Collapse genes with the same presence absence pattern."""
     colapsed_rows = pd.DataFrame(columns = matrix.columns)
     identical_sets = {}
@@ -64,14 +86,18 @@ def collapse_genes(matrix):
             identical_sets["family_group_" + str(count)] = [non_unique.iloc[i].name]
 
     colapsed_rows.index = indices
-    with open("non-unique_genes.csv", "w", encoding = "utf-8") as out:
+
+    # Use output_paths if provided (from Snakemake), otherwise use current directory
+    non_unique_genes_file = output_paths['non_unique_genes'] if output_paths else "non-unique_genes.csv"
+
+    with open(non_unique_genes_file, "w", encoding = "utf-8") as out:
         for key, value in identical_sets.items():
             out.write(key + "\t" + ",".join(value) + "\n")
     matrix = matrix.drop_duplicates(keep = False)
     matrix = pd.concat([matrix, colapsed_rows])
     return matrix
 
-def collapse_genomes(matrix):
+def collapse_genomes(matrix, output_paths=None):
     """Collapse genomes with identical presence absence patterns."""
     matrix = matrix.transpose()
     colapsed_genomes = pd.DataFrame(columns = matrix.columns)
@@ -93,7 +119,11 @@ def collapse_genomes(matrix):
             identical_sets["genome_group_" + str(count)] = [non_unique.iloc[i].name]
 
     colapsed_genomes.index = indices
-    with open("non-unique_genomes.csv", "w", encoding = "utf-8") as out:
+
+    # Use output_paths if provided (from Snakemake), otherwise use current directory
+    non_unique_genomes_file = output_paths['non_unique_genomes'] if output_paths else "non-unique_genomes.csv"
+
+    with open(non_unique_genomes_file, "w", encoding = "utf-8") as out:
         for key, value in identical_sets.items():
             out.write(key + "\t" + ",".join(value) + "\n")
     matrix = matrix.drop_duplicates(keep = False)
@@ -133,18 +163,18 @@ def main():
     them to a file.
     Write the new matrix to a file.
     """
-    infile, outfile, roary = get_args() # pylint: disable=unbalanced-tuple-unpacking
+    infile, outfile, roary, output_paths = get_args()
     matrix = pd.read_csv(infile, header = 0, index_col = [0,1,2], dtype = str)
     if roary:
         matrix = convert_roary(matrix)
     #remove genes with < 2 present/absent
     matrix = rf.preprocess_df(matrix, 0, 0, 0)
     print("Writing singletons, core and constant genes")
-    matrix = write_gene_lists(matrix)
+    matrix = write_gene_lists(matrix, output_paths)
 
     print("Collapsing identical genes and genomes")
-    matrix = collapse_genes(matrix)
-    matrix = collapse_genomes(matrix)
+    matrix = collapse_genes(matrix, output_paths)
+    matrix = collapse_genomes(matrix, output_paths)
 
     #now write matrix to a file
     print("Writing collapsed matrix")

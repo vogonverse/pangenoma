@@ -1,9 +1,6 @@
 # workflow/rules/download.smk
 """
 Download and organize genomes from NCBI.
-
-This module handles:
-
 """
 
 rule query_ncbi_metadata:
@@ -42,7 +39,6 @@ rule download_genomes:
         accessions = "data/raw/genomes/accessions_filtered.txt"
     output:
         flag = "data/raw/genomes/.download_complete",
-        metadata = "data/raw/genomes/metadata.tsv"
     params:
         outdir = config["download"]["outdir"]
     conda:

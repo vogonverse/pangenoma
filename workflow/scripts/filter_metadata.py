@@ -1,9 +1,8 @@
 
 #!/usr/bin/env python3
 """
-Step 2: Deduplicate GCA vs GCF assemblies.
-Rule: If both GCA and GCF exist for same genome, keep GCA
-      If only GCF exists, keep GCF
+Deduplicate GCA vs GCF assemblies.
+If both GCA and GCF exist for same genome, keep GCA. If only GCF exists, then keep GCF
 """
 import json
 from pathlib import Path
@@ -22,13 +21,8 @@ def parse_metadata(metadata_file):
 def deduplicate_assemblies(genomes):
     """
     Deduplicate GCA vs GCF based on assembly name.
-    
-    Logic:
-    - Group by assembly_info.assembly_name (e.g., "ASM584v2")
-    - If group has both GCA and GCF → keep GCA
-    - If group has only GCF → keep GCF
     """
-    # Group by assembly name
+    # group by assembly name
     assembly_groups = defaultdict(list)
     
     for genome in genomes:
@@ -40,23 +34,23 @@ def deduplicate_assemblies(genomes):
             'genome': genome
         })
     
-    # Select one per group
+    # select one per group
     selected = []
     stats = {'total_groups': 0, 'gca_preferred': 0, 'gcf_only': 0}
     
     for assembly_name, assemblies in assembly_groups.items():
         stats['total_groups'] += 1
         
-        # Check if GCA exists
+        # check if GCA exists
         gca_assemblies = [a for a in assemblies if a['type'] == 'GCA']
         gcf_assemblies = [a for a in assemblies if a['type'] == 'GCF']
         
         if gca_assemblies:
-            # Prefer GCA
+            # prefer GCA
             selected.append(gca_assemblies[0]['accession'])
             stats['gca_preferred'] += 1
         elif gcf_assemblies:
-            # Only GCF available
+            # only GCF available
             selected.append(gcf_assemblies[0]['accession'])
             stats['gcf_only'] += 1
     
@@ -74,11 +68,11 @@ def main():
     print("Deduplicating GCA/GCF assemblies...")
     selected_accessions, stats = deduplicate_assemblies(genomes)
     
-    # Write accessions list
+    # write accessions list
     with open(accessions_file, 'w') as f:
         f.write('\n'.join(selected_accessions) + '\n')
     
-    # Write stats
+    # write stats
     with open(stats_file, 'w') as f:
         f.write(f"Deduplication Statistics\n")
         f.write(f"========================\n")
@@ -87,7 +81,7 @@ def main():
         f.write(f"GCF only (no GCA): {stats['gcf_only']}\n")
         f.write(f"\nFinal unique genomes: {len(selected_accessions)}\n")
     
-    print(f"✓ Selected {len(selected_accessions)} unique genomes")
+    print(f" Selected {len(selected_accessions)} unique genomes")
     print(f"  - {stats['gca_preferred']} GCA (preferred)")
     print(f"  - {stats['gcf_only']} GCF (only option)")
 

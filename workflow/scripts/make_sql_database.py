@@ -6,20 +6,28 @@ import argparse
 import sqlite3
 
 def get_args():
-    """Get user arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--edges", dest = "edges_file",
-                        type = str, help = "Edges table")
-    parser.add_argument("-n", "--nodes", dest = "nodes_file",
-                        type = str, help = "Nodes table")
-    parser.add_argument("-o", "--output", dest = "outfile",
-                        type = str, help = "output file",
-                        default = "network")
-    args = parser.parse_args()
-    if None in [args.edges_file, args.nodes_file]:
-        parser.print_help(sys.stderr)
-        sys.exit(0)
-    return [args.edges_file, args.nodes_file, args.outfile]
+    """Get arguments from Snakemake or command line."""
+    # Check if running from Snakemake
+    try:
+        edges_file = snakemake.input.edges
+        nodes_file = snakemake.input.nodes
+        outfile = snakemake.output.database
+        return [edges_file, nodes_file, outfile]
+    except NameError:
+        # Running from command line
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-e", "--edges", dest = "edges_file",
+                            type = str, help = "Edges table")
+        parser.add_argument("-n", "--nodes", dest = "nodes_file",
+                            type = str, help = "Nodes table")
+        parser.add_argument("-o", "--output", dest = "outfile",
+                            type = str, help = "output file",
+                            default = "network")
+        args = parser.parse_args()
+        if None in [args.edges_file, args.nodes_file]:
+            parser.print_help(sys.stderr)
+            sys.exit(0)
+        return [args.edges_file, args.nodes_file, args.outfile]
 
 def init_edges(infile, crsr, connection):
     """Initialise the Edges Table."""

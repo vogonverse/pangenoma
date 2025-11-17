@@ -8,6 +8,7 @@
 logs/
 benchmarks/
 *.log
+slurm-*.out
 
 # ============================================
 # RESULTS - Generated files
@@ -130,6 +131,11 @@ results/database/*.sqlite3
 # Linux
 .directory
 .Trash-*
+
+# ============================================
+# DOCUMENTATION
+# ============================================
+CLUSTER_USAGE.md
 
 
 

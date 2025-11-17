@@ -60,7 +60,7 @@ def main():
         print(f"ERROR: GFF file not created: {gff_file}", file=sys.stderr)
         sys.exit(1)
     
-    print(f"✓ Successfully annotated: {prefix}")
+    print(f" Successfully annotated: {prefix}")
     print(f"  Output: {outdir}")
 
 if __name__ == "__main__":

@@ -9,19 +9,27 @@ import pandas as pd
 import rf_module as rf
 
 def get_args():
-    """Get user arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--performance", dest = "performance",
-                        type = str, help = "Performance table")
-    parser.add_argument("-d", "--dtable", dest = "d_table",
-                        type = str, help = "D table")
-    parser.add_argument("-o", "--output", dest = "output_file",
-                        type = str, help = "Output table file")
-    args = parser.parse_args()
-    if None in [args.performance, args.d_table, args.output_file]:
-        parser.print_help(sys.stderr)
-        sys.exit(0)
-    return [args.performance, args.d_table, args.output_file]
+    """Get arguments from Snakemake or command line."""
+    # Check if running from Snakemake
+    try:
+        performance = snakemake.input.performance
+        d_table = snakemake.input.d_stats
+        output_file = snakemake.output.nodes
+        return [performance, d_table, output_file]
+    except NameError:
+        # Running from command line
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-p", "--performance", dest = "performance",
+                            type = str, help = "Performance table")
+        parser.add_argument("-d", "--dtable", dest = "d_table",
+                            type = str, help = "D table")
+        parser.add_argument("-o", "--output", dest = "output_file",
+                            type = str, help = "Output table file")
+        args = parser.parse_args()
+        if None in [args.performance, args.d_table, args.output_file]:
+            parser.print_help(sys.stderr)
+            sys.exit(0)
+        return [args.performance, args.d_table, args.output_file]
 
 
 def main():

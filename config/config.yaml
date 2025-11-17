@@ -20,7 +20,7 @@ input:
   # gene_presence_absence: "results/panaroo/gene_presence_absence.csv"
 
   # Filogenia (requerida solo si phylogeny.skip = false)
-  phylogeny: null  # "results/phylogeny/strain_phylogeny.tree"
+  phylogeny: #null  # "results/phylogeny/strain_phylogeny.tree" .nwk 
 
 # ============================================
 # DESCARGA DE GENOMAS (solo modo full)
@@ -33,7 +33,7 @@ download:
   # Opciones: complete, chromosome, scaffold, contig
   assembly_levels:
     - "complete"
-    # - "chromosome"  # Descomentar si se quiere incluir
+    # - "chromosome"  
 
   # Directorio de salida
   outdir: "data/raw/genomes"
@@ -114,7 +114,7 @@ random_forest:
 # NETWORK ANALYSIS
 # ============================================
 network:
-  importance_threshold: 0.01    # Importancias < threshold → 0
+  importance_threshold: 0.01    # Importancias < threshold --> 0
 
 # ============================================
 # FILTRADO DE RED (para clustering)
@@ -136,7 +136,7 @@ clustering:
 # ANÁLISIS FILOGENÉTICO (estadístico D)
 # ============================================
 phylogeny:
-  skip: true                    # true = saltar análisis D
+  skip: false              # true = saltar análisis D
   cores: 4                      # Cores paralelizar
   d_permutations: 1000          # Permutaciones para test D
 
@@ -171,7 +171,7 @@ outputs:
 # PRODUCCIÓN (reproducir paper):
 #   mode: "full"
 #   download.assembly_levels: ["complete"]
-#   # Sin max_genomes → descarga TODOS 
+#   # Sin max_genomes descarga TODOS 
 #   random_forest.n_trees: 1000
 #   phylogeny.skip: false
 #   phylogeny_build.bootstrap: 1000

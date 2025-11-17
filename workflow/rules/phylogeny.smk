@@ -22,8 +22,12 @@ rule calculate_d_statistic:
     """
     input:
         coincident = "results/phylogeny/coincident_nodes_in.csv",
-        phylogeny = config["input"]["phylogeny"],
-        matrix = "results/process_matrix/collapsed_matrix.csv" # calculate_d.R expects processed matrix
+        phylogeny = lambda wildcards: (
+            config["input"]["phylogeny"]
+            if config["input"]["phylogeny"] is not None
+            else "results/phylogeny/core_genome.treefile"
+        ),
+        matrix = "data/interim/collapsed_matrix.csv"
     output:
         d_stats = "results/phylogeny/d_statistics.tsv"
     params:
@@ -51,3 +55,28 @@ rule summarize_d_statistics:
         "../../envs/py.yml"
     script:
         "../scripts/phylogeny_utils.py"
+
+
+
+rule build_phylogeny:
+    """
+    Build phylogenetic tree from core genome alignment using IQ-TREE.
+    """
+    input:
+        alignment = "results/panaroo/core_gene_alignment.aln"
+    output:
+        tree = "results/phylogeny/core_genome.treefile",
+        iqtree = "results/phylogeny/core_genome.iqtree",
+        log_file = "results/phylogeny/core_genome.log"
+    params:
+        prefix = "results/phylogeny/core_genome",
+        model = config["phylogeny_build"]["model"],
+        bootstrap = config["phylogeny_build"]["bootstrap"]
+    log:
+        "logs/phylogeny/build_tree.log"
+    threads: config["phylogeny_build"]["threads"]
+    conda:
+        "../../envs/phylogeny.yml"
+    script:
+        "../scripts/phylogeny_utils.py"
+
