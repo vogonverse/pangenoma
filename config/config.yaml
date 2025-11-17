@@ -1,40 +1,179 @@
-# Configuración del Pipeline PanForest (SIN FILOGENIA)
+# config/config.yaml
+# Configuración del Pipeline PanForest
 # ====================================================
 
-# Archivos de entrada
+# ============================================
+# MODO DE OPERACIÓN
+# ============================================
+mode: "full"
+# "example" = Usa datos de ejemplo del repo original
+# "full"    = Pipeline completo desde descarga de genomas
+
+# ============================================
+# ARCHIVOS DE ENTRADA (según modo)
+# ============================================
 input:
+  # MODO EXAMPLE: usa datos de ejemplo
   gene_presence_absence: "data/raw/example_gene_presence_absence.csv"
-  phylogeny: null  # por ahora no tenemos .tree
 
-# Parámetros del preprocesamiento
+  # MODO FULL: se generan automáticamente 
+  # gene_presence_absence: "results/panaroo/gene_presence_absence.csv"
+
+  # Filogenia (requerida solo si phylogeny.skip = false)
+  phylogeny: null  # "results/phylogeny/strain_phylogeny.tree"
+
+# ============================================
+# DESCARGA DE GENOMAS (solo modo full)
+# ============================================
+download:
+  organism: "Escherichia coli"  # Solo documentación
+  taxid: "562"                  # NCBI Taxonomy ID (REQUERIDO)
+
+  # Niveles de ensamblaje a descargar
+  # Opciones: complete, chromosome, scaffold, contig
+  assembly_levels:
+    - "complete"
+    # - "chromosome"  # Descomentar si se quiere incluir
+
+  # Directorio de salida
+  outdir: "data/raw/genomes"
+
+  # Opcional: limitar número de genomas (testing)
+  # max_genomes: 100  # Descomentar para limitar
+
+# ============================================
+# ANOTACIÓN CON PROKKA (solo modo full)
+# ============================================
+prokka:
+  genus: "Escherichia"
+  species: "coli"
+  kingdom: "Bacteria"
+  cpus_per_genome: 2
+
+# ============================================
+# PANAROO - Inferencia del pangenoma (solo modo full)
+# ============================================
+panaroo:
+  # Modos de operación
+  mode: "moderate"              # strict, moderate, relaxed
+  clean_mode: "sensitive"       # strict, moderate, sensitive (paper:sensitive)
+
+  # Clustering de genes
+  identity_threshold: 0.95      # % identidad para agrupar genes
+  family_threshold: 0.7         # Threshold para clustering de familias
+  len_dif_percent: 0.98         # Cutoff de diferencia de longitud
+
+  # Core genome
+  core_threshold: 0.95          # % genomas para considerar gen core(paper:95%)
+
+  # Alineamiento
+  alignment: "core"             # core, pan, o null (no alinear)
+  aligner: "mafft"              # mafft, clustal, prank
+
+  # Opciones avanzadas
+  remove_invalid_genes: true    # Eliminar genes con anotaciones no validas
+  merge_paralogs: false         # Fusionar parálogos en un solo cluster
+
+  # Recursos
+  threads: 8
+
+# ============================================
+# CONSTRUCCIÓN FILOGENÉTICA (solo modo full)
+# ============================================
+phylogeny_build:
+  method: "iqtree"              # Método para construir árbol
+  model: "MFP"                  # Modelo evolutivo (MFP = auto-select)
+  bootstrap: 1000               # Número de bootstraps
+  threads: 8
+
+# ============================================
+# PREPROCESAMIENTO
+# ============================================
 preprocessing:
-  roary_format: false  # true si viene de Roary, false si viene de Panaroo
-  
-# Parámetros del Random Forest
+  roary_format: false           # true si input viene de Roary (vs Panaroo)
+
+  # Filtros de genes (según paper)
+  min_presence_percent: 1.0     # Genes presentes en >1% de genomas
+  max_presence_percent: 99.0    # Genes presentes en <99% de genomas
+
+# ============================================
+# RANDOM FOREST
+# ============================================
 random_forest:
-  n_trees: 100         # Para TEST 100, para hacerlo de verdad 1000
-  max_depth: 8         
-  min_present: 1.0     
-  min_absent: 1.0      
-  n_threads: 4         
-  purity: null         
+  # Parámetros del modelo
+  n_trees: 100                  # TEST: 100, PAPER: 1000
+  max_depth: 8                  # Profundidad máxima del árbol (paper:8)
+  min_present: 1.0              # % mínimo de presencia
+  min_absent: 1.0               # % mínimo de ausencia
+  purity: null                  # null = usar max_depth para stopping
 
-# Parámetros de simplificación
+  # Paralelización
+  n_threads: 4
+
+# ============================================
+# NETWORK ANALYSIS
+# ============================================
 network:
-  importance_threshold: 0.01
+  importance_threshold: 0.01    # Importancias < threshold → 0
 
-# Parámetros del estadístico D (DESACTIVADO = skip en true)
-phylogeny:
-  d_permutations: 1000
-  cores: 4
-  skip: true  # PARA activar/DESAcTIVAR
-
-# Parámetros de filtrado (sin D)
+# ============================================
+# FILTRADO DE RED (para clustering)
+# ============================================
 filtering:
-  d_threshold: -999  # Valor bajo para no filtrar por D
-  f1_threshold: 0.8  # Solo filtrar por F1
+  # Filtros según paper (genes predictable)
+  d_threshold: 0.0              # D > 0 (dispersión no Browniana)
+  f1_threshold: 0.9             # F1 > 0.9 en ambas clases
+  error_threshold: 0.1          # Error < 0.1
 
-# Clustering
+# ============================================
+# CLUSTERING
+# ============================================
 clustering:
-  method: "louvain"
-  edge_type: null
+  method: "louvain"             # Paper:Louvain
+  edge_type: null               # null = ambos tipos de edges
+
+# ============================================
+# ANÁLISIS FILOGENÉTICO (estadístico D)
+# ============================================
+phylogeny:
+  skip: true                    # true = saltar análisis D
+  cores: 4                      # Cores paralelizar
+  d_permutations: 1000          # Permutaciones para test D
+
+  # Filtros para calcular D (solo genes bien predichos)
+  f1_threshold: 0.9             # F1 > 0.9 en ambas clases
+  error_threshold: 0.1          # Error < 0.1
+
+# ============================================
+# OUTPUTS
+# ============================================
+outputs:
+  generate_database: false      # Crear base de datos SQL
+  generate_clusters: true       # Generar archivos por cluster
+  generate_reports: false       # Generar informe HTML
+
+# ============================================
+# CASOS DE USO
+# ============================================
+#
+#  TEST RÁPIDO:
+#   mode: "example"
+#   phylogeny.skip: true
+#   random_forest.n_trees: 100
+#
+#  TEST CON DESCARGA (pocos genomas):
+#   mode: "full"
+#   download.assembly_levels: ["complete"]
+#   download.max_genomes: 50
+#   random_forest.n_trees: 100
+#   phylogeny.skip: true
+#
+# PRODUCCIÓN (reproducir paper):
+#   mode: "full"
+#   download.assembly_levels: ["complete"]
+#   # Sin max_genomes → descarga TODOS 
+#   random_forest.n_trees: 1000
+#   phylogeny.skip: false
+#   phylogeny_build.bootstrap: 1000
+#   panaroo.threads: 16
+#   random_forest.n_threads: 16
