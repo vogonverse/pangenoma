@@ -2,7 +2,7 @@
 # ===============================
 
 # ============================================
-# SNAKEMAKE - Outputs y temporales
+# SNAKEMAKE - Outputs and temporary files
 # ============================================
 .snakemake/
 logs/
@@ -10,21 +10,25 @@ benchmarks/
 *.log
 
 # ============================================
-# RESULTADOS - Archivos generados
+# RESULTS - Generated files
 # ============================================
 results/
-data/interim/
-data/final/
+data/interim/*
+data/final/*
 
-# Mantener estructura de directorios
+# Keep directory structure
 !results/.gitkeep
 !data/interim/.gitkeep
 !data/final/.gitkeep
 
 # ============================================
-# DATOS CRUDOS - Genomas descargados
+# RAW DATA - Downloaded genomes
 # ============================================
-data/raw/genomes/
+data/raw/genomes/genomes/
+data/raw/genomes/ncbi_metadata.jsonl
+data/raw/genomes/gff_files.txt
+data/raw/genomes/accessions_filtered.txt
+data/raw/genomes/deduplication_stats.txt
 data/raw/ncbi_dataset/
 data/raw/*.gff
 data/raw/*.gbk
@@ -35,14 +39,14 @@ data/raw/*.fa
 data/raw/*.fastq
 data/raw/*.fastq.gz
 
-# Mantener datos del repo original para salida de Panaroo del paper (gene_presence_absence.csv)
+# Keep original repo data for Panaroo output from paper (gene_presence_absence.csv)
 !data/raw/example_*.csv
 !data/raw/.gitkeep
 
 # ============================================
-# PANAROO - Outputs intermedios grandes
+# PANAROO - Large intermediate outputs
 # ============================================
-# Si Panaroo genera outputs en data/raw, ignorarlos
+# If Panaroo generates outputs in data/raw, ignore them
 data/raw/panaroo_output/
 data/raw/gene_data/
 data/raw/*.aln
@@ -51,7 +55,7 @@ data/raw/*.nwk
 data/raw/*.phy
 
 # ============================================
-# PYTHON - Bytecode y cache
+# PYTHON - Bytecode and cache
 # ============================================
 __pycache__/
 *.py[cod]
@@ -68,7 +72,7 @@ pip-delete-this-directory.txt
 
 
 # ============================================
-# R - Temporales y datos
+# R - Temporary files and data
 # ============================================
 .Rhistory
 .RData
@@ -79,7 +83,7 @@ pip-delete-this-directory.txt
 /cache/
 
 # ============================================
-# CONDA 
+# CONDA
 # ============================================
 .conda/
 *.tar.bz2
@@ -87,7 +91,7 @@ pip-delete-this-directory.txt
 workflow/envs/.conda/
 
 # ============================================
-# GRÁFICOS REGENERABLES
+# REGENERABLE GRAPHICS
 # ============================================
 dag.png
 rulegraph.png
@@ -95,12 +99,12 @@ filegraph.png
 *.pdf
 *.svg
 
-# Mantener figuras finales
+# Keep final figures
 !results/figures/paper_*.png
 !results/figures/paper_*.pdf
 
 # ============================================
-# BASE DE DATOS 
+# DATABASE
 # ============================================
 results/database/*.db
 results/database/*.sqlite
@@ -108,7 +112,7 @@ results/database/*.sqlite3
 *.db-journal
 
 # ============================================
-# CSV GRANDES - Matrices de importancia
+# LARGE CSV - Importance matrices
 # ============================================
 # results/random_forest/imp.csv
 # results/networks/simplified_imp.csv
@@ -121,7 +125,7 @@ results/database/*.sqlite3
 *.code-workspace
 
 # ============================================
-# SISTEMA OPERATIVO
+# OPERATING SYSTEM
 # ============================================
 # Linux
 .directory
