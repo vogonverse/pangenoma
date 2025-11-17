@@ -11,26 +11,37 @@ from networkx.algorithms.community import greedy_modularity_communities
 from networkx.algorithms.community import asyn_lpa_communities
 
 def get_args():
-    """Get settings from user arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", type = str,
-                        help = "Input network file", dest = "infile")
-    parser.add_argument("-e", "--edge-type", type = str,
-                        help = "Interaction type (pp, nn). \
-                                Default = null (both included)",
-                        default = False, dest = "edge_type")
-    parser.add_argument("-m", "--method", type = str, dest = "method",
-                        help = "Method to cluster graph (modularity (greedy),\
-                                 louvain (iterative), default = modularity",
-                        default = "modularity")
-    parser.add_argument("-o", "--output", type = str, default = "clusters",
-                        help = "Output directory, default = clusters/",
-                        dest = "outdir")
-    args = parser.parse_args()
-    if None in [args.infile]:
-        parser.print_help(sys.stderr)
-        sys.exit(0)
-    return [args.infile, args.edge_type, args.method, args.outdir]
+    """Get settings from Snakemake or command line arguments."""
+    # Check if running from Snakemake
+    try:
+        infile = snakemake.input.network
+        edge_type = snakemake.params.edge_type if snakemake.params.edge_type else False
+        method = snakemake.params.method
+        outdir = str(snakemake.output.clusters_dir)
+        # Create output directory
+        os.makedirs(outdir, exist_ok=True)
+        return [infile, edge_type, method, outdir]
+    except NameError:
+        # Running from command line
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-i", "--input", type = str,
+                            help = "Input network file", dest = "infile")
+        parser.add_argument("-e", "--edge-type", type = str,
+                            help = "Interaction type (pp, nn). \
+                                    Default = null (both included)",
+                            default = False, dest = "edge_type")
+        parser.add_argument("-m", "--method", type = str, dest = "method",
+                            help = "Method to cluster graph (modularity (greedy),\
+                                     louvain (iterative), default = modularity",
+                            default = "modularity")
+        parser.add_argument("-o", "--output", type = str, default = "clusters",
+                            help = "Output directory, default = clusters/",
+                            dest = "outdir")
+        args = parser.parse_args()
+        if None in [args.infile]:
+            parser.print_help(sys.stderr)
+            sys.exit(0)
+        return [args.infile, args.edge_type, args.method, args.outdir]
 
 
 def main():
@@ -70,6 +81,13 @@ def main():
         subset = subset[subset['Source'].isin(genes)]
         subset.to_csv(outdir + "/cluster_" + str(i) + "/cluster.csv",
                       index = False)
+
+    # Create done flag when running from Snakemake
+    try:
+        with open(snakemake.output.flag, 'w') as f:
+            f.write(f"Clustering completed with {len(clusters)} clusters\n")
+    except NameError:
+        pass  # Not running from Snakemake
 
     #nx.draw(network, with_labels=True)
     #plt.show()

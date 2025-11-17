@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
-"""Convert importance matrices to Cyctoscape's preferred format."""
+"""Convert importance matrices to Cytoscape's preferred format."""
 
 import sys
 import pandas as pd
 
 def get_args():
-    """Get user arguments."""
-    if len(sys.argv) != 3:
-        print("USAGE: python3 convert_to_cytoscape.py infile outfile")
-        sys.exit()
-    return sys.argv[1:]
+    """Get arguments from command line or Snakemake."""
+    # Check if running from Snakemake
+    try:
+        infile = snakemake.input.importance
+        outfile = snakemake.output.network
+        return infile, outfile
+    except NameError:
+        # Running from command line
+        if len(sys.argv) != 3:
+            print("USAGE: python3 convert_to_cytoscape.py infile outfile")
+            sys.exit()
+        return sys.argv[1:]
 
 def main():
     """Columns: Source,Target,Interactiontype,Weight."""
-    infile, outfile = get_args() # pylint: disable=unbalanced-tuple-unpacking
+    infile, outfile = get_args()
     lines = ["Source,Target,Interactiontype,Weight"]
     imp = pd.read_csv(infile, index_col = 0, header = 0)
     imp = imp.apply(pd.to_numeric)

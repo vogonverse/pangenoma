@@ -1,25 +1,25 @@
 library(caper)
 library(phytools)
-library(getopt)
 library(future)
 library(flock)
 library(stringr)
 
-#Get call input
-spec <- matrix(c('path', 'a', 1, "character",
-                 'phylogeny', 't', 1, "character",
-                 'gene_pa', 'g', 1, "character",
-                 'cores', 'c', 1, "integer",
-                 'output', 'o', 1, "character"), byrow=TRUE, ncol=4)
-opt <- getopt(spec)
-#hardcoded
-#opt = list("~/OneDrive - The University of Nottingham/Post_doc_notts/Software/pangenome_rf/test_results/", "strain_phylogeny_mod.phy", "collapsed_matrix.csv", 1, "d_test")
-#names(opt) = c("path", "phylogeny", "gene_pa", "cores", "output")
-#setwd(opt$path)
+# ============================================
+# Configuración desde Snakemake
+# ============================================
+# Cuando se usa la directiva script:, Snakemake inyecta automáticamente
+# el objeto 'snakemake' con input, output, params, log, threads, etc.
+
+# Obtener parámetros desde Snakemake
+opt <- list(
+  phylogeny = snakemake@input[["phylogeny"]],
+  gene_pa = snakemake@input[["matrix"]],
+  cores = snakemake@threads[[1]],
+  output = snakemake@params[["output_prefix"]]
+)
 
 #Read in
-outstr <- paste(opt$output, "_nodes_in.csv", sep="")
-genes  <- read.csv(outstr, check.names=TRUE) #"coincident_nodes_in.csv")
+genes  <- read.csv(snakemake@input[["coincident"]], check.names=TRUE)
 
 #Read in tree
 tree <- read.tree(opt$phylogeny)
@@ -111,7 +111,8 @@ if (availcores < opt$cores) {
 }
 print("Cores is set to:")
 print(cores)
-outstr <- paste(opt$output, "_nodes.tsv", sep="")
+# Usar el archivo de salida definido en Snakemake
+outstr <- snakemake@output[["d_stats"]]
 write(paste("ID","Result",sep="\t"),file=outstr,append=FALSE)
 parallelCluster <- parallel::makeCluster(cores, type="FORK")
 mkWorker <- function(dataset) {

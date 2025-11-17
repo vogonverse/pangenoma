@@ -6,12 +6,19 @@ import pandas as pd
 import rf_module as rf
 
 def get_args():
-    """Get user arguments."""
-    if len(sys.argv) != 4:
-        print("USAGE: python3 direct_network.py in_graph, pres_abs_matrix,\
-                outfile")
-        sys.exit()
-    return sys.argv[1:]
+    """Get arguments from command line or Snakemake."""
+    # Check if running from Snakemake
+    try:
+        network_file = snakemake.input.network
+        matrix_file = snakemake.input.matrix
+        outfile = snakemake.output.directed
+        return network_file, matrix_file, outfile
+    except NameError:
+        # Running from command line
+        if len(sys.argv) != 4:
+            print("USAGE: python3 direct_network.py in_graph pres_abs_matrix outfile")
+            sys.exit()
+        return sys.argv[1:]
 
 
 def calculate_proportions(matrix):
