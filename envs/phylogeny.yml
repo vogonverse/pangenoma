@@ -1,0 +1,18 @@
+name: phylogeny
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+
+dependencies:
+  - iqtree>=2.2 # phylogenetic tree
+  - r-base>=4.0
+  - r-caper          
+  - r-phytools       
+  - r-ape           
+  - r-getopt         
+  - r-future        
+  - r-flock          
+  - r-stringr        
+  - python>=3.9
