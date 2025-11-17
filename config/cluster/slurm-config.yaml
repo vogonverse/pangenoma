@@ -1,0 +1,164 @@
+# SLURM Cluster Configuration
+# ============================
+# Resource allocation for each rule type in the workflow
+# Configured for cluster with:
+#   - Partitions: normal (default, unlimited time), interactive (12h max)
+#   - Max CPUs per node: 52
+#   - Max Memory per node: ~370GB
+#   - No account/QoS required
+
+__default__:
+  partition: "normal"
+  time: "02:00:00"
+  mem: "4G"
+  cpus: 1
+  output: "logs/slurm/{rule}_{jobid}.out"
+  error: "logs/slurm/{rule}_{jobid}.err"
+
+# ============================================
+# DOWNLOAD & PREPROCESSING
+# ============================================
+
+download_genomes:
+  time: "04:00:00"
+  mem: "8G"
+  cpus: 2
+
+validate_downloads:
+  time: "00:30:00"
+  mem: "4G"
+  cpus: 1
+
+# ============================================
+# ANNOTATION - PROKKA (high parallelization)
+# ============================================
+
+prokka_annotate:
+  time: "02:00:00"
+  mem: "8G"
+  cpus: 4
+  # For many genomes, consider array jobs
+
+collect_gff_files:
+  time: "00:10:00"
+  mem: "2G"
+  cpus: 1
+
+# ============================================
+# PANGENOME - PANAROO (memory & CPU intensive)
+# ============================================
+
+run_panaroo:
+  time: "24:00:00"
+  mem: "128G"
+  cpus: 24
+
+# ============================================
+# PHYLOGENY BUILD (very CPU intensive)
+# ============================================
+
+build_phylogeny:
+  time: "48:00:00"
+  mem: "64G"
+  cpus: 24
+
+# ============================================
+# DATA PREPROCESSING
+# ============================================
+
+filter_metadata:
+  time: "00:30:00"
+  mem: "4G"
+  cpus: 1
+
+remove_duplicates:
+  time: "00:30:00"
+  mem: "8G"
+  cpus: 1
+
+collapse_matrix:
+  time: "01:00:00"
+  mem: "16G"
+  cpus: 1
+
+identify_constant_genes:
+  time: "00:30:00"
+  mem: "8G"
+  cpus: 1
+
+identify_core_genes:
+  time: "00:30:00"
+  mem: "8G"
+  cpus: 1
+
+identify_singletons:
+  time: "00:30:00"
+  mem: "8G"
+  cpus: 1
+
+# ============================================
+# RANDOM FOREST (CPU intensive)
+# ============================================
+
+train_random_forest:
+  time: "12:00:00"
+  mem: "64G"
+  cpus: 24
+  # Increase for production (1000 trees)
+
+# ============================================
+# NETWORK ANALYSIS
+# ============================================
+
+simplify_importance_matrix:
+  time: "01:00:00"
+  mem: "16G"
+  cpus: 1
+
+build_cytoscape_network:
+  time: "00:30:00"
+  mem: "8G"
+  cpus: 1
+
+build_directed_network:
+  time: "01:00:00"
+  mem: "16G"
+  cpus: 1
+
+# ============================================
+# PHYLOGENY ANALYSIS (very CPU intensive)
+# ============================================
+
+calculate_d_statistics:
+  time: "96:00:00"
+  mem: "128G"
+  cpus: 48
+  # This is the most intensive step!
+
+# ============================================
+# CLUSTERING
+# ============================================
+
+cluster_network:
+  time: "02:00:00"
+  mem: "16G"
+  cpus: 4
+
+# ============================================
+# DATABASE
+# ============================================
+
+create_nodes_table:
+  time: "00:30:00"
+  mem: "8G"
+  cpus: 1
+
+create_edges_table:
+  time: "01:00:00"
+  mem: "16G"
+  cpus: 1
+
+build_database:
+  time: "00:30:00"
+  mem: "8G"
+  cpus: 1
