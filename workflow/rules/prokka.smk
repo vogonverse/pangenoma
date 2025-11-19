@@ -37,6 +37,7 @@ rule prokka_annotate:
 
     log:
         "logs/prokka/{accession}.log"
+    threads: 4
 
     conda:
         "../../envs/prokka.yml"
