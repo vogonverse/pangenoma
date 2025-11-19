@@ -48,7 +48,8 @@ prokka:
   genus: "Escherichia"
   species: "coli"
   kingdom: "Bacteria"
-  cpus_per_genome: 2
+  threads: 2
+  mem_mb: 4000
 
 # ============================================
 # PANAROO - Inferencia del pangenoma (solo modo full)

@@ -7,7 +7,8 @@ Generates gene presence/absence matrix and all associated outputs.
 rule run_panaroo:
     """Execute Panaroo to infer the pangenome."""
     input:
-        gff_list = "results/prokka/gff_files.txt"
+        gff_list = "results/prokka/gff_files.txt",
+        all_done = "results/prokka/.all_gffs_registered"
     output:
         # main outputs
         gene_pa_csv = "results/panaroo/gene_presence_absence.csv", # input for RF

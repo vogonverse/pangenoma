@@ -27,7 +27,8 @@ rule prokka_annotate:
     output:
         gff = "results/prokka/{accession}/{accession}.gff",
         faa = "results/prokka/{accession}/{accession}.faa",
-        ffn = "results/prokka/{accession}/{accession}.ffn"
+        ffn = "results/prokka/{accession}/{accession}.ffn",
+        marker = "results/prokka/{accession}/.gff_registered"
     params:
         outdir = "results/prokka/{accession}",
         prefix = "{accession}",
@@ -37,7 +38,11 @@ rule prokka_annotate:
 
     log:
         "logs/prokka/{accession}.log"
-    threads: 4
+    benchmark:
+        "benchmarks/prokka/{accession}.tsv"
+    threads: config["prokka"]["threads"]
+    resources:
+        mem_mb = config["prokka"]["mem_mb"]
 
     conda:
         "../../envs/prokka.yml"
@@ -45,20 +50,18 @@ rule prokka_annotate:
         "../scripts/prokka.py"
 
 # ============================================
-#  Collect GFFs
+#  Ensure all GFFs are registered
 # ============================================
-rule collect_prokka_gffs:
-    """Create list of GFFs for Panaroo"""
+rule ensure_all_gffs_registered:
+    """Ensure all GFFs have been added to the list file"""
     input:
-        gffs = expand(
-            "results/prokka/{accession}/{accession}.gff",
+        markers = expand(
+            "results/prokka/{accession}/.gff_registered",
             accession=get_downloaded_genomes()
         )
     output:
-        gff_list = "results/prokka/gff_files.txt"
-    conda:
-        "../../envs/prokka.yml"
-    log:
-        "logs/prokka/collect_gffs.log"
-    script:
-        "../scripts/collect_gffs.py"
+        done = "results/prokka/.all_gffs_registered"
+    run:
+        from pathlib import Path
+        # All marker files exist, meaning all GFFs have been written to gff_files.txt
+        Path(output.done).write_text("All GFF files registered\n")
