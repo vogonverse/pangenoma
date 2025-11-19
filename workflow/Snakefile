@@ -22,6 +22,7 @@ GENERATE_REPORTS = config["outputs"].get("generate_reports", False)
 include: "rules/preprocessing.smk"
 include: "rules/random_forest.smk"
 include: "rules/network_analysis.smk"
+include: "rules/visualization.smk"
 
 # FULL mode only
 if MODE == "full":
@@ -46,51 +47,56 @@ def get_all_targets():
     targets = []
 
     # === FULL MODE: Download and pangenome ===
-    if MODE == "full":
-        targets.extend([
-            # Download & validation
-            "data/raw/genomes/.download_complete",
-            # Prokka annotation
-            "results/prokka/gff_files.txt",
-            # Panaroo pangenome
-            "results/panaroo/gene_presence_absence.csv",
-            "results/panaroo/summary_statistics.txt",
-            "results/panaroo/core_gene_alignment.aln",
-        ])
+    # COMMENTED: No longer needed in rule all
+    # if MODE == "full":
+    #     targets.extend([
+    #         # Download & validation
+    #         "data/raw/genomes/.download_complete",
+    #         # Prokka annotation
+    #         "results/prokka/gff_files.txt",
+    #         # Panaroo pangenome
+    #         "results/panaroo/gene_presence_absence.csv",
+    #         "results/panaroo/summary_statistics.txt",
+    #         "results/panaroo/core_gene_alignment.aln",
+    #     ])
 
     # === 1. Preprocessing (A) ===
-    targets.extend([
-        "data/interim/collapsed_matrix.csv",
-        "data/interim/constant_genes.txt",
-        "data/interim/core_genes.txt",
-        "data/interim/singletons.txt",
-        "data/interim/non_unique_genes.csv",
-        "data/interim/non_unique_genomes.csv",
-    ])
+    # COMMENTED: No longer needed in rule all
+    # targets.extend([
+    #     "data/interim/collapsed_matrix.csv",
+    #     "data/interim/constant_genes.txt",
+    #     "data/interim/core_genes.txt",
+    #     "data/interim/singletons.txt",
+    #     "data/interim/non_unique_genes.csv",
+    #     "data/interim/non_unique_genomes.csv",
+    # ])
 
     # === 2. Random Forest (A) ===
-    targets.extend([
-        "results/random_forest/imp.csv",
-        "results/random_forest/performance.csv",
-    ])
+    # COMMENTED: No longer needed in rule all
+    # targets.extend([
+    #     "results/random_forest/imp.csv",
+    #     "results/random_forest/performance.csv",
+    # ])
 
     # === 3. Gene network (A) ===
-    targets.extend([
-        "results/networks/simplified_imp.csv",
-        "results/networks/cytoscape_network.csv",
-        "results/networks/directed_network.csv",
-    ])
+    # COMMENTED: No longer needed in rule all
+    # targets.extend([
+    #     "results/networks/simplified_imp.csv",
+    #     "results/networks/cytoscape_network.csv",
+    #     "results/networks/directed_network.csv",
+    # ])
 
     # === 4. Phylogenetic analysis (CONDITIONAL) ===
-    if not SKIP_PHYLOGENY:
-        # Add tree building if no phylogeny file provided
-        if config["input"]["phylogeny"] is None:
-            targets.append("results/phylogeny/core_genome.treefile")
-        # Always add D statistics
-        targets.extend([
-            "results/phylogeny/d_statistics.tsv",
-            "results/phylogeny/d_summary.txt",
-        ])
+    # COMMENTED: No longer needed in rule all
+    # if not SKIP_PHYLOGENY:
+    #     # Add tree building if no phylogeny file provided
+    #     if config["input"]["phylogeny"] is None:
+    #         targets.append("results/phylogeny/core_genome.treefile")
+    #     # Always add D statistics
+    #     targets.extend([
+    #         "results/phylogeny/d_statistics.tsv",
+    #         "results/phylogeny/d_summary.txt",
+    #     ])
 
     # === 5. Clustering (C) ===
     if GENERATE_CLUSTERS:
