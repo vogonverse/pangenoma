@@ -1,0 +1,12 @@
+name: cytoscape
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.8
+  - pandas
+  - requests
+  - pip
+  - pip:
+    - py4cytoscape>=1.5.0
