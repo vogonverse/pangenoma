@@ -5,7 +5,12 @@ Deduplication strategy:
 1. Group by accession number (e.g., GCA_000123456.1 and GCF_000123456.2 -> same group)
 2. Prefer GCA_ over GCF_ when both exist for the same genome
 3. When multiple versions exist (e.g., .1, .2, .3), keep the latest version
-4. Output: one accession per unique genome
+4. Apply max_genomes limit AFTER deduplication (if configured)
+5. Output: one accession per unique genome
+
+Configuration:
+- Set max_genomes in config.yaml to limit number of genomes
+- Unset/comment max_genomes to download all deduplicated genomes
 """
 import json
 from pathlib import Path
@@ -77,18 +82,31 @@ def main():
     metadata_file = snakemake.input.metadata
     accessions_file = snakemake.output.accessions
     stats_file = snakemake.output.stats
-    
+
+    # Get max_genomes from config (if specified)
+    max_genomes = snakemake.config["download"].get("max_genomes")
+
     print("Parsing metadata...")
     genomes = parse_metadata(metadata_file)
     print(f"  Total genomes in metadata: {len(genomes)}")
-    
+
     print("Deduplicating GCA/GCF assemblies...")
     selected_accessions, stats = deduplicate_assemblies(genomes)
-    
+
+    # Apply limit AFTER deduplication (if specified)
+    total_deduplicated = len(selected_accessions)
+    if max_genomes and len(selected_accessions) > max_genomes:
+        print(f"  Limiting to first {max_genomes} genomes (from {len(selected_accessions)} deduplicated)")
+        selected_accessions = selected_accessions[:max_genomes]
+        stats['limited'] = True
+        stats['total_before_limit'] = total_deduplicated
+    else:
+        stats['limited'] = False
+
     # write accessions list
     with open(accessions_file, 'w') as f:
         f.write('\n'.join(selected_accessions) + '\n')
-    
+
     # write stats
     with open(stats_file, 'w') as f:
         f.write(f"Deduplication Statistics\n")
@@ -97,12 +115,17 @@ def main():
         f.write(f"GCA preferred (had both GCA/GCF): {stats['gca_preferred']}\n")
         f.write(f"GCF only (no GCA alternative): {stats['gcf_only']}\n")
         f.write(f"Duplicate versions removed: {stats['version_dedup']}\n")
+        f.write(f"\nTotal after deduplication: {total_deduplicated}\n")
+        if stats['limited']:
+            f.write(f"Limited to: {len(selected_accessions)} genomes\n")
         f.write(f"\nFinal unique genomes: {len(selected_accessions)}\n")
 
     print(f" Selected {len(selected_accessions)} unique genomes")
     print(f"  - {stats['gca_preferred']} GCA (preferred)")
     print(f"  - {stats['gcf_only']} GCF (only option)")
     print(f"  - {stats['version_dedup']} duplicate versions removed")
+    if stats['limited']:
+        print(f"  - Limited from {total_deduplicated} to {len(selected_accessions)} genomes")
 
 if __name__ == "__main__":
     main()
