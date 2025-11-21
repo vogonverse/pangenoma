@@ -8,3 +8,4 @@ dependencies:
   - mafft>=7.490
   - cd-hit
   - python>=3.9
+  - numpy<1.24  # Fix for panaroo incompatibility with numpy.tostring() removal

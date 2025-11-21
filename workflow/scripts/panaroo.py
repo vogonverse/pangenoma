@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 import sys
 
+
 def validate_gff_list(gff_list_file):
     """Validate that GFF list file exists and has content"""
     gff_list = Path(gff_list_file)
@@ -35,7 +36,7 @@ def validate_gff_list(gff_list_file):
 def build_panaroo_command(gff_list, params):
     """
     Build Panaroo command from parameters.
-    
+
     ALL parameters come from config.yaml via Snakemake params.
     Nothing hardcoded here.
     """
@@ -43,34 +44,30 @@ def build_panaroo_command(gff_list, params):
         "panaroo",
         "-i", str(gff_list),
         "-o", str(params.outdir),
-        "--mode", params.mode,
         "--clean-mode", params.clean_mode,
-        "--threshold", str(params.identity_threshold),
+        "-c", str(params.identity_threshold),
         "-t", str(params.threads)
     ]
-    
+
     # Optional: Alignment
     if params.alignment and params.alignment != "null":
-        cmd.extend(["--alignment", params.alignment])
+        cmd.extend(["-a", params.alignment])
         cmd.extend(["--aligner", params.aligner])
         cmd.extend(["--core_threshold", str(params.core_threshold)])
-    
+
     # Optional: Advanced options
-    if params.get("family_threshold"):
-        cmd.extend(["--family_threshold", str(params.family_threshold)])
-    
-    if params.get("len_dif_percent"):
+    if hasattr(params, "family_threshold") and params.family_threshold:
+        cmd.extend(["-f", str(params.family_threshold)])
+
+    if hasattr(params, "len_dif_percent") and params.len_dif_percent:
         cmd.extend(["--len_dif_percent", str(params.len_dif_percent)])
-    
-    if params.get("merge_paralogs"):
+
+    if hasattr(params, "merge_paralogs") and params.merge_paralogs:
         cmd.append("--merge_paralogs")
-    
-    if params.get("remove_invalid_genes"):
-        cmd.append("--remove_invalid_genes")
-    
-    # Verbose output
-    cmd.append("--verbose")
-    
+
+    if hasattr(params, "remove_invalid_genes") and params.remove_invalid_genes:
+        cmd.append("--remove-invalid-genes")
+
     return cmd
 
 def run_panaroo(gff_list, params):
@@ -79,8 +76,7 @@ def run_panaroo(gff_list, params):
     # Build command from parameters
     cmd = build_panaroo_command(gff_list, params)
     
-    print(f"\nRunning Panaroo...")
-    print(f"  Mode: {params.mode}")
+    print(f"\nPanarooing...")
     print(f"  Clean mode: {params.clean_mode}")
     print(f"  Identity threshold: {params.identity_threshold}")
     print(f"  Alignment: {params.alignment}")
@@ -98,10 +94,10 @@ def run_panaroo(gff_list, params):
         )
         
         print(result.stdout)
-        print("\n✓ Panaroo completed successfully")
+        print("\n Panaroo completed successfully")
         
     except subprocess.CalledProcessError as e:
-        print(f"\n✗ ERROR: Panaroo failed", file=sys.stderr)
+        print(f"\n  ERROR: Panaroo failed", file=sys.stderr)
         print(f"Return code: {e.returncode}", file=sys.stderr)
         print(f"\nSTDOUT:\n{e.stdout}", file=sys.stderr)
         print(f"\nSTDERR:\n{e.stderr}", file=sys.stderr)
@@ -116,11 +112,11 @@ def validate_outputs(outdir):
     gene_pa = outdir_path / "gene_presence_absence.csv"
     
     if not gene_pa.exists():
-        print(f"\n✗ ERROR: gene_presence_absence.csv not created", file=sys.stderr)
+        print(f"\n ERROR: gene_presence_absence.csv not created", file=sys.stderr)
         sys.exit(1)
     
     if gene_pa.stat().st_size == 0:
-        print(f"\n✗ ERROR: gene_presence_absence.csv is empty", file=sys.stderr)
+        print(f"\n ERROR: gene_presence_absence.csv is empty", file=sys.stderr)
         sys.exit(1)
     
     # Count stats
@@ -147,13 +143,19 @@ def validate_outputs(outdir):
     return n_genes, n_genomes
 
 def main():
-    # Get parameters from Snakemake
-    gff_list = snakemake.input.gff_list
-    params = snakemake.params
-    
-    print("=" * 70)
-    print("PANAROO - Pangenome Inference")
-    print("=" * 70)
+    try:
+        # get parameters from Snakemake
+        gff_list = snakemake.input.gff_list
+        params = snakemake.params
+
+        print("=" * 70)
+        print("PANAROO - Pangenome Inference")
+        print("=" * 70)
+    except Exception as e:
+        print(f"ERROR during initialization: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
     
     # Step 1: Validate inputs
     print("\n[1/3] Validating inputs...")
@@ -161,7 +163,6 @@ def main():
     
     # Step 2: Run Panaroo
     print(f"\n[2/3] Running Panaroo on {n_input_genomes:,} genomes...")
-    print(f"      (This may take 2-6 hours)")
     run_panaroo(gff_list, params)
     
     # Step 3: Validate outputs
@@ -169,7 +170,7 @@ def main():
     n_genes, n_genomes = validate_outputs(params.outdir)
     
     print("\n" + "=" * 70)
-    print("✓ PANAROO COMPLETED SUCCESSFULLY")
+    print(" PANAROO COMPLETED SUCCESSFULLY")
     print("=" * 70)
     print(f"  Input genomes: {n_input_genomes:,}")
     print(f"  Output genomes: {n_genomes:,}")

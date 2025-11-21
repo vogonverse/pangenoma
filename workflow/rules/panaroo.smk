@@ -30,7 +30,6 @@ rule run_panaroo:
     params:
         # pass ALL config to params
         outdir = "results/panaroo",
-        mode = config["panaroo"]["mode"],
         clean_mode = config["panaroo"]["clean_mode"],
         identity_threshold = config["panaroo"]["identity_threshold"],
         family_threshold = config["panaroo"].get("family_threshold", 0.7),
