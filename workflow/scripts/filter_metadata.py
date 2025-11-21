@@ -1,8 +1,11 @@
-
-#!/usr/bin/env python3
 """
-Deduplicate GCA vs GCF assemblies.
-If both GCA and GCF exist for same genome, keep GCA. If only GCF exists, then keep GCF
+Deduplicate assembly accessions based on accession base ID.
+
+Deduplication strategy:
+1. Group by accession number (e.g., GCA_000123456.1 and GCF_000123456.2 -> same group)
+2. Prefer GCA_ over GCF_ when both exist for the same genome
+3. When multiple versions exist (e.g., .1, .2, .3), keep the latest version
+4. Output: one accession per unique genome
 """
 import json
 from pathlib import Path
@@ -20,40 +23,54 @@ def parse_metadata(metadata_file):
 
 def deduplicate_assemblies(genomes):
     """
-    Deduplicate GCA vs GCF based on assembly name.
+    Deduplicate GCA vs GCF based on accession base (without version).
+    If both GCA and GCF exist for same genome ID, prefer GCA.
+    If multiple versions exist, prefer the latest version.
     """
-    # group by assembly name
+    # group by accession base
     assembly_groups = defaultdict(list)
-    
+
     for genome in genomes:
         accession = genome['accession']
-        assembly_name = genome['assembly_info']['assembly_name']
-        assembly_groups[assembly_name].append({
-            'accession': accession,
-            'type': 'GCA' if accession.startswith('GCA_') else 'GCF',
-            'genome': genome
-        })
-    
+
+        # Extract base accession without version
+        parts = accession.split('_')
+        if len(parts) >= 2:
+            accession_number = parts[1].split('.')[0]  # Remove version
+            assembly_groups[accession_number].append({
+                'accession': accession,
+                'type': 'GCA' if accession.startswith('GCA_') else 'GCF',
+                'version': int(parts[1].split('.')[1]) if '.' in parts[1] else 1,
+                'genome': genome
+            })
+
     # select one per group
     selected = []
-    stats = {'total_groups': 0, 'gca_preferred': 0, 'gcf_only': 0}
-    
-    for assembly_name, assemblies in assembly_groups.items():
+    stats = {'total_groups': 0, 'gca_preferred': 0, 'gcf_only': 0, 'version_dedup': 0}
+
+    for accession_number, assemblies in assembly_groups.items():
         stats['total_groups'] += 1
-        
-        # check if GCA exists
+
+        # Separate GCA and GCF
         gca_assemblies = [a for a in assemblies if a['type'] == 'GCA']
         gcf_assemblies = [a for a in assemblies if a['type'] == 'GCF']
-        
+
+        # Prefer GCA over GCF
         if gca_assemblies:
-            # prefer GCA
+            # Sort by version (descending) to get latest
+            gca_assemblies.sort(key=lambda x: x['version'], reverse=True)
             selected.append(gca_assemblies[0]['accession'])
             stats['gca_preferred'] += 1
+            if len(gca_assemblies) > 1:
+                stats['version_dedup'] += len(gca_assemblies) - 1
         elif gcf_assemblies:
-            # only GCF available
+            # Sort by version (descending) to get latest
+            gcf_assemblies.sort(key=lambda x: x['version'], reverse=True)
             selected.append(gcf_assemblies[0]['accession'])
             stats['gcf_only'] += 1
-    
+            if len(gcf_assemblies) > 1:
+                stats['version_dedup'] += len(gcf_assemblies) - 1
+
     return selected, stats
 
 def main():
@@ -76,14 +93,16 @@ def main():
     with open(stats_file, 'w') as f:
         f.write(f"Deduplication Statistics\n")
         f.write(f"========================\n")
-        f.write(f"Total assembly groups: {stats['total_groups']}\n")
-        f.write(f"GCA preferred (had both): {stats['gca_preferred']}\n")
-        f.write(f"GCF only (no GCA): {stats['gcf_only']}\n")
+        f.write(f"Total assembly groups (by accession base): {stats['total_groups']}\n")
+        f.write(f"GCA preferred (had both GCA/GCF): {stats['gca_preferred']}\n")
+        f.write(f"GCF only (no GCA alternative): {stats['gcf_only']}\n")
+        f.write(f"Duplicate versions removed: {stats['version_dedup']}\n")
         f.write(f"\nFinal unique genomes: {len(selected_accessions)}\n")
-    
+
     print(f" Selected {len(selected_accessions)} unique genomes")
     print(f"  - {stats['gca_preferred']} GCA (preferred)")
     print(f"  - {stats['gcf_only']} GCF (only option)")
+    print(f"  - {stats['version_dedup']} duplicate versions removed")
 
 if __name__ == "__main__":
     main()

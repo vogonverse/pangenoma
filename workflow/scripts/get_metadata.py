@@ -1,5 +1,4 @@
 
-#!/usr/bin/env python3
 """
 Get metadata from NCBI without downloading genomes.
 Saves metadata JSON with all candidate genomes.
@@ -18,7 +17,7 @@ def main():
     # Get summary (metadata only, no download)
     cmd = [
         "datasets", "summary", "genome", "taxon", taxid,
-        "--assembly-level", ",".join(assembly_levels),
+        "--annotated", "--assembly-level", ",".join(assembly_levels),
         "--as-json-lines"
     ]
     
