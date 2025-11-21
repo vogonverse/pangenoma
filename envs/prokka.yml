@@ -4,5 +4,8 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - prokka>=1.14.6
+  - prokka=1.14.6
   - python>=3.9
+  - perl
+  - perl-bioperl
+  - parallel
