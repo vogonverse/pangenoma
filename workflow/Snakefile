@@ -125,8 +125,8 @@ if not SKIP_PHYLOGENY:
     rule only_statistics:
         """Calculate D statistics only"""
         input:
-            "results/phylogeny/d_statistics.tsv",
-            "results/phylogeny/d_summary.txt"
+            "results/statistics/d_statistics.tsv",
+            "results/statistics/d_summary.txt"
 
 if GENERATE_CLUSTERS:
     rule only_clusters:
@@ -294,15 +294,12 @@ onsuccess:
         print("   🌳 Filogenia:")
         print("      - Árbol filogenético: results/phylogeny/core_genome.treefile")
 
-    if not SKIP_PHYLOGENY and os.path.exists("results/phylogeny/d_statistics.tsv"):
-        if not os.path.exists("results/phylogeny/core_genome.treefile"):
-            print("")
-            print("   🌳 Análisis filogenético:")
-        else:
-            print("      - Estadísticas filogenéticas:")
-        print("        * Estadístico D: results/phylogeny/d_statistics.tsv")
-        if os.path.exists("results/phylogeny/d_summary.txt"):
-            print("        * Resumen: results/phylogeny/d_summary.txt")
+    if not SKIP_PHYLOGENY and os.path.exists("results/statistics/d_statistics.tsv"):
+        print("")
+        print("   📊 Estadísticas filogenéticas:")
+        print("      - Estadístico D: results/statistics/d_statistics.tsv")
+        if os.path.exists("results/statistics/d_summary.txt"):
+            print("      - Resumen: results/statistics/d_summary.txt")
 
     if GENERATE_CLUSTERS and os.path.exists("results/clusters/.done"):
         print("")
