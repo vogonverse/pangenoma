@@ -3,27 +3,17 @@
 # ====================================================
 
 # ============================================
-# MODO DE OPERACIÓN
-# ============================================
-mode: "full"
-# "example" = Usa datos de ejemplo del repo original
-# "full"    = Pipeline completo desde descarga de genomas
-
-# ============================================
-# ARCHIVOS DE ENTRADA (según modo)
+# ARCHIVOS DE ENTRADA
 # ============================================
 input:
-  # MODO EXAMPLE: usa datos de ejemplo
-  gene_presence_absence: "data/raw/example_gene_presence_absence.csv"
-
-  # MODO FULL: se generan automáticamente 
-  # gene_presence_absence: "results/panaroo/gene_presence_absence.csv"
+  # Matriz de presencia/ausencia de genes (se genera automáticamente con Panaroo)
+  gene_presence_absence: "results/panaroo/gene_presence_absence.csv"
 
   # Filogenia (requerida solo si phylogeny.skip = false)
   phylogeny: #null  # "results/phylogeny/strain_phylogeny.tree" .nwk 
 
 # ============================================
-# DESCARGA DE GENOMAS (solo modo full)
+# DESCARGA DE GENOMAS
 # ============================================
 download:
   organism: "Escherichia coli"  # Solo documentación
@@ -43,7 +33,7 @@ download:
   max_genomes: 100  # Descomentar para limitar
 
 # ============================================
-# ANOTACIÓN CON PROKKA (solo modo full)
+# ANOTACIÓN CON PROKKA
 # ============================================
 prokka:
   genus: "Escherichia"
@@ -53,7 +43,7 @@ prokka:
   mem_mb: 4000
 
 # ============================================
-# PANAROO - Inferencia del pangenoma (solo modo full)
+# PANAROO - Inferencia del pangenoma
 # ============================================
 panaroo:
   # Modo de limpieza (el único modo que usa Panaroo)
@@ -79,7 +69,7 @@ panaroo:
   threads: 8
 
 # ============================================
-# CONSTRUCCIÓN FILOGENÉTICA (solo modo full)
+# CONSTRUCCIÓN FILOGENÉTICA
 # ============================================
 phylogeny_build:
   method: "iqtree"              # Método para construir árbol
@@ -157,22 +147,15 @@ outputs:
 # CASOS DE USO
 # ============================================
 #
-#  TEST RÁPIDO:
-#   mode: "example"
-#   phylogeny.skip: true
-#   random_forest.n_trees: 100
-#
 #  TEST CON DESCARGA (pocos genomas):
-#   mode: "full"
 #   download.assembly_levels: ["complete"]
 #   download.max_genomes: 50
 #   random_forest.n_trees: 100
 #   phylogeny.skip: true
 #
 # PRODUCCIÓN (reproducir paper):
-#   mode: "full"
 #   download.assembly_levels: ["complete"]
-#   # Sin max_genomes descarga TODOS 
+#   # Sin max_genomes descarga TODOS
 #   random_forest.n_trees: 1000
 #   phylogeny.skip: false
 #   phylogeny_build.bootstrap: 1000

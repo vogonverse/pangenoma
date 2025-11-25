@@ -6,103 +6,61 @@
 configfile: "config/config.yaml"
 
 # ============================================
-# OPERATION MODE AND GLOBAL VARIABLES
+# GLOBAL VARIABLES
 # ============================================
-MODE = config.get("mode", "example")
 SKIP_PHYLOGENY = config["phylogeny"]["skip"]
 GENERATE_DATABASE = config["outputs"].get("generate_database", False)
 GENERATE_CLUSTERS = config["outputs"].get("generate_clusters", True)
 GENERATE_REPORTS = config["outputs"].get("generate_reports", False)
 
 # ============================================
-# INCLUDE MODULAR RULES BY MODE
+# CONFIG VALIDATION
+# ============================================
+# Database generation requires phylogenetic statistics
+if GENERATE_DATABASE and SKIP_PHYLOGENY:
+    raise ValueError(
+        "Cannot generate database with SKIP_PHYLOGENY=True. "
+        "Database requires D statistics. Set phylogeny.skip=false in config."
+    )
+
+# ============================================
+# INCLUDE MODULAR RULES
 # ============================================
 
-# ALWAYS include (both modes)
+# Core pipeline modules
+include: "rules/download.smk"
+include: "rules/prokka.smk"
+include: "rules/panaroo.smk"
 include: "rules/preprocessing.smk"
 include: "rules/random_forest.smk"
 include: "rules/network_analysis.smk"
 include: "rules/visualization.smk"
 
-# FULL mode only
-if MODE == "full":
-    include: "rules/download.smk"
-    include: "rules/prokka.smk"
-    include: "rules/panaroo.smk"
-
-# Include phylogeny analysis if not skipped
-if not SKIP_PHYLOGENY:
+# Include phylogeny construction if no tree provided
+if config["input"]["phylogeny"] is None:
     include: "rules/phylogeny.smk"
+
+# Include phylogenetic statistics if not skipped
+if not SKIP_PHYLOGENY:
+    include: "rules/statistics.smk"
 
 # Include database if enabled
 if GENERATE_DATABASE:
     include: "rules/database.smk"
 
 # ============================================
-# ALL RULE (Final target based on mode/config)
+# ALL RULE (Final target based on config)
 # ============================================
 
 def get_all_targets():
-    """Determine which targets to execute based on mode and config"""
+    """Determine which targets to execute based on config"""
     targets = []
 
-    # === FULL MODE: Download and pangenome ===
-    # COMMENTED: No longer needed in rule all
-    # if MODE == "full":
-    #     targets.extend([
-    #         # Download & validation
-    #         "data/raw/genomes/.download_complete",
-    #         # Prokka annotation
-    #         "results/prokka/gff_files.txt",
-    #         # Panaroo pangenome
-    #         "results/panaroo/gene_presence_absence.csv",
-    #         "results/panaroo/summary_statistics.txt",
-    #         "results/panaroo/core_gene_alignment.aln",
-    #     ])
-
-    # === 1. Preprocessing (A) ===
-    # COMMENTED: No longer needed in rule all
-    # targets.extend([
-    #     "data/interim/collapsed_matrix.csv",
-    #     "data/interim/constant_genes.txt",
-    #     "data/interim/core_genes.txt",
-    #     "data/interim/singletons.txt",
-    #     "data/interim/non_unique_genes.csv",
-    #     "data/interim/non_unique_genomes.csv",
-    # ])
-
-    # === 2. Random Forest (A) ===
-    # COMMENTED: No longer needed in rule all
-    # targets.extend([
-    #     "results/random_forest/imp.csv",
-    #     "results/random_forest/performance.csv",
-    # ])
-
-    # === 3. Gene network (A) ===
-    # COMMENTED: No longer needed in rule all
-    # targets.extend([
-    #     "results/networks/simplified_imp.csv",
-    #     "results/networks/cytoscape_network.csv",
-    #     "results/networks/directed_network.csv",
-    # ])
-
-    # === 4. Phylogenetic analysis (CONDITIONAL) ===
-    # COMMENTED: No longer needed in rule all
-    # if not SKIP_PHYLOGENY:
-    #     # Add tree building if no phylogeny file provided
-    #     if config["input"]["phylogeny"] is None:
-    #         targets.append("results/phylogeny/core_genome.treefile")
-    #     # Always add D statistics
-    #     targets.extend([
-    #         "results/phylogeny/d_statistics.tsv",
-    #         "results/phylogeny/d_summary.txt",
-    #     ])
-
-    # === 5. Clustering (C) ===
+    # === Clustering ===
     if GENERATE_CLUSTERS:
         targets.append("results/clusters/.done")
 
-    # === 6. Database (C) ===
+    # === Database ===
     if GENERATE_DATABASE:
         targets.extend([
             "results/database/nodes_table.csv",
@@ -110,7 +68,7 @@ def get_all_targets():
             "results/database/network.db",
         ])
 
-    # === 7. Reports (C) ===
+    # === Reports ===
     if GENERATE_REPORTS:
         pass  # TODO:
 
@@ -124,21 +82,20 @@ rule all:
 # testing rules
 # ============================================
 
-if MODE == "full":
-    rule only_download:
-        """Download genomes only"""
-        input:
-            "data/raw/genomes/.download_complete"
+rule only_download:
+    """Download genomes only"""
+    input:
+        "data/raw/genomes/.download_complete"
 
-    rule only_prokka:
-        """Run Prokka annotation only"""
-        input:
-            "results/prokka/gff_files.txt"
+rule only_prokka:
+    """Run Prokka annotation only"""
+    input:
+        "results/prokka/gff_files.txt"
 
-    rule only_panaroo:
-        """Run pangenome analysis only"""
-        input:
-            "results/panaroo/gene_presence_absence.csv"
+rule only_panaroo:
+    """Run pangenome analysis only"""
+    input:
+        "results/panaroo/gene_presence_absence.csv"
 
 rule only_preprocessing:
     """Run preprocessing only"""
@@ -158,8 +115,14 @@ rule only_network:
     input:
         "results/networks/directed_network.csv"
 
+if config["input"]["phylogeny"] is None:
+    rule only_build_phylogeny:
+        """Build phylogenetic tree only"""
+        input:
+            "results/phylogeny/core_genome.treefile"
+
 if not SKIP_PHYLOGENY:
-    rule only_phylogeny:
+    rule only_statistics:
         """Calculate D statistics only"""
         input:
             "results/phylogeny/d_statistics.tsv",
@@ -252,41 +215,35 @@ onstart:
     print("=" * 70)
     print("🧬 PanForest Pipeline - INICIANDO ANÁLISIS")
     print("=" * 70)
-    print(f"📋 Modo: {MODE.upper()}")
 
-    if MODE == "example":
-        print("   (Usando datos del repo original para testing)")
-    elif MODE == "full":
-        max_genomes = config["download"].get("max_genomes")
-        if max_genomes:
-            print(f"   (Descarga limitada: máximo {max_genomes} genomas)")
-        else:
-            print(f"   (Descarga completa: todos los genomas disponibles)")
-        print(f"   Organismo: {config['download']['organism']}")
-        print(f"   TaxID: {config['download']['taxid']}")
-        print(f"   Assembly levels: {', '.join(config['download']['assembly_levels'])}")
+    max_genomes = config["download"].get("max_genomes")
+    if max_genomes:
+        print(f"📋 Descarga limitada: máximo {max_genomes} genomas")
+    else:
+        print(f"📋 Descarga completa: todos los genomas disponibles")
+
+    print(f"   Organismo: {config['download']['organism']}")
+    print(f"   TaxID: {config['download']['taxid']}")
+    print(f"   Assembly levels: {', '.join(config['download']['assembly_levels'])}")
 
     print("")
     print("📁 Datos de entrada:")
-    if MODE == "example":
-        print(f"   - Matriz: {config['input']['gene_presence_absence']}")
-    else:
-        print(f"   - Matriz: Se generará con Panaroo")
+    print(f"   - Matriz: Se generará con Panaroo")
 
     if config['input']['phylogeny']:
-        print(f"   - Filogenia: {config['input']['phylogeny']}")
+        print(f"   - Filogenia: {config['input']['phylogeny']} (proporcionada)")
     else:
-        print(f"   - Filogenia: No disponible (requerida para D statistics)")
+        print(f"   - Filogenia: Se construirá con IQ-TREE")
 
     print("")
     print("🔧 Módulos activos:")
-    if MODE == "full":
-        print(f"   - Download & Annotation: ✅")
-        print(f"   - Panaroo (pangenome): ✅")
+    print(f"   - Download & Annotation: ✅")
+    print(f"   - Panaroo (pangenome): ✅")
     print(f"   - Preprocesamiento: ✅")
     print(f"   - Random Forest: ✅ ({config['random_forest']['n_trees']} árboles, depth={config['random_forest']['max_depth']})")
     print(f"   - Network Analysis: ✅ (threshold={config['network']['importance_threshold']})")
-    print(f"   - Phylogeny (D stat): {'❌ SKIP' if SKIP_PHYLOGENY else '✅'}")
+    print(f"   - Phylogeny construction: {'❌' if config['input']['phylogeny'] else '✅'}")
+    print(f"   - Phylogenetic statistics (D): {'❌ SKIP' if SKIP_PHYLOGENY else '✅'}")
     print(f"   - Clustering: {'✅ (' + config['clustering']['method'] + ')' if GENERATE_CLUSTERS else '❌'}")
     print(f"   - Database: {'✅' if GENERATE_DATABASE else '❌'}")
 
@@ -304,24 +261,23 @@ onsuccess:
     print("")
     print("📊 Resultados disponibles en:")
 
-    if MODE == "full":
-        print("")
-        print("   🧬 Datos descargados y anotados:")
-        print("      - Genomas: data/raw/genomes/genomes/")
+    print("")
+    print("   🧬 Datos descargados y anotados:")
+    print("      - Genomas: data/raw/genomes/genomes/")
 
-        # Contar genomas
-        gff_files = glob.glob("data/raw/genomes/genomes/*/*.gff")
-        if gff_files:
-            print(f"      - Total genomas: {len(gff_files)}")
+    # Contar genomas
+    gff_files = glob.glob("data/raw/genomes/genomes/*/*.gff")
+    if gff_files:
+        print(f"      - Total genomas: {len(gff_files)}")
 
-        # Prokka outputs
-        if os.path.exists("results/prokka"):
-            print("      - Anotaciones Prokka: results/prokka/")
+    # Prokka outputs
+    if os.path.exists("results/prokka"):
+        print("      - Anotaciones Prokka: results/prokka/")
 
-        # Panaroo outputs
-        if os.path.exists("results/panaroo/gene_presence_absence.csv"):
-            print("      - Pangenoma (Panaroo): results/panaroo/")
-            print("      - Matriz de genes: results/panaroo/gene_presence_absence.csv")
+    # Panaroo outputs
+    if os.path.exists("results/panaroo/gene_presence_absence.csv"):
+        print("      - Pangenoma (Panaroo): results/panaroo/")
+        print("      - Matriz de genes: results/panaroo/gene_presence_absence.csv")
 
     print("")
     print("   📈 Análisis:")
@@ -333,12 +289,20 @@ onsuccess:
     print("        * Red dirigida: results/networks/directed_network.csv")
     print("        * Cytoscape: results/networks/cytoscape_network.csv")
 
-    if not SKIP_PHYLOGENY and os.path.exists("results/phylogeny/d_statistics.tsv"):
+    if os.path.exists("results/phylogeny/core_genome.treefile"):
         print("")
-        print("   🌳 Análisis filogenético:")
-        print("      - Estadístico D: results/phylogeny/d_statistics.tsv")
+        print("   🌳 Filogenia:")
+        print("      - Árbol filogenético: results/phylogeny/core_genome.treefile")
+
+    if not SKIP_PHYLOGENY and os.path.exists("results/phylogeny/d_statistics.tsv"):
+        if not os.path.exists("results/phylogeny/core_genome.treefile"):
+            print("")
+            print("   🌳 Análisis filogenético:")
+        else:
+            print("      - Estadísticas filogenéticas:")
+        print("        * Estadístico D: results/phylogeny/d_statistics.tsv")
         if os.path.exists("results/phylogeny/d_summary.txt"):
-            print("      - Resumen: results/phylogeny/d_summary.txt")
+            print("        * Resumen: results/phylogeny/d_summary.txt")
 
     if GENERATE_CLUSTERS and os.path.exists("results/clusters/.done"):
         print("")
