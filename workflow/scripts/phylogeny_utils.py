@@ -83,6 +83,14 @@ def build_phylogenetic_tree(alignment_file, prefix, model, bootstrap, threads, l
         "-nt", str(threads)
     ]
 
+    # Check if checkpoint exists but output files are missing
+    # If so, use --redo to regenerate the complete output
+    checkpoint_file = f"{prefix}.ckp.gz"
+    treefile = f"{prefix}.treefile"
+    if os.path.exists(checkpoint_file) and not os.path.exists(treefile):
+        print(f"⚠ Warning: Found checkpoint but output files missing, using --redo")
+        cmd.append("--redo")
+
     # Run IQ-TREE
     print(f"Building phylogenetic tree with IQ-TREE...")
     print(f"  Alignment: {alignment_file}")
@@ -108,7 +116,7 @@ def build_phylogenetic_tree(alignment_file, prefix, model, bootstrap, threads, l
             f.write("\n=== STDERR ===\n")
             f.write(result.stderr)
             f.write("\n\n=== SUMMARY ===\n")
-            f.write("✓ Phylogenetic tree built successfully\n")
+            f.write(" Phylogenetic tree built successfully\n")
             f.write(f"  - Tree file: {prefix}.treefile\n")
             f.write(f"  - Model: {model}\n")
             f.write(f"  - Bootstrap replicates: {bootstrap}\n")
