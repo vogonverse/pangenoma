@@ -104,4 +104,44 @@ def main():
     results[1].round(5).to_csv(output + "/performance.csv")
 
 if __name__ == "__main__":
-    main()
+    # Check if running from Snakemake
+    try:
+        # Snakemake provides a global 'snakemake' object
+        snakemake
+        # Extract parameters from Snakemake
+        ntrees = snakemake.params.n_trees
+        depth = snakemake.params.depth
+        purity = snakemake.params.purity
+        filename = snakemake.input.matrix
+        min_present = snakemake.params.min_present
+        min_absent = snakemake.params.min_absent
+        output = snakemake.params.output_dir
+        null_h = False  # Not used in workflow
+        nthreads = snakemake.params.n_threads
+        checkpoint = 0  # Start from beginning
+
+        # Create output directory if needed
+        if not os.path.exists(output):
+            os.makedirs(output, exist_ok=True)
+
+        # Run the analysis
+        table = pd.read_csv(filename, header=0, index_col=[0,1,2], dtype=str)
+        total_genomes = table.shape[1]
+        min_missing = math.ceil(min_absent * total_genomes/100)
+        min_present_count = math.ceil(min_present * total_genomes/100)
+
+        table = rf.preprocess_df(table, null_h, min_missing, min_present_count)
+        imp, performance = rf.init_tables(table)
+
+        # Randomise genome order
+        n_s = table.shape[1]
+        table = table[random.sample(list(table.columns), n_s)]
+        results = rf.fit_classifiers(table, [imp, performance],
+                                     [ntrees, depth, purity, nthreads],
+                                     output, checkpoint)
+        results[0].round(5).to_csv(output + "/imp.csv")
+        results[1].round(5).to_csv(output + "/performance.csv")
+
+    except NameError:
+        # Not running from Snakemake, use command line arguments
+        main()
