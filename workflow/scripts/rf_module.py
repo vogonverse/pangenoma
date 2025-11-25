@@ -147,11 +147,27 @@ def fit_classifiers(table, results, params, output, checkpoint):
         print("gene number\t" + str(i+1) + "\tout of\t" + str(n_g))
         y_all = table[table.columns[i]]
         x_all = table.drop([table.columns[i]], axis = 1)
+
+        # Check if there are enough samples in each class for stratified split
+        # With test_size=0.25, we need at least 2 samples in the minority class
+        class_counts = y_all.value_counts()
+        if len(class_counts) < 2 or class_counts.min() < 2:
+            print(f"Skipping gene {i+1}: insufficient samples in one or both classes (class counts: {class_counts.to_dict()})")
+            # Mark this gene as skipped by setting count to -1
+            results[1].loc[i, 'count'] = -1
+            continue
+
         #now split the dataset into test and train - train with 75% in each
         #class
         # datasets = x_train, x_test, y_train, y_test
-        datasets = train_test_split(x_all, y_all,
-                                    test_size=0.25, stratify=y_all)
+        try:
+            datasets = train_test_split(x_all, y_all,
+                                        test_size=0.25, stratify=y_all)
+        except ValueError as e:
+            print(f"Skipping gene {i+1}: {str(e)}")
+            # Mark this gene as skipped by setting count to -1
+            results[1].loc[i, 'count'] = -1
+            continue
         #random forest
         if params[2]:
             if params[1]:
