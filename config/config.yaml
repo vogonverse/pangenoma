@@ -27,19 +27,20 @@ input:
 # ============================================
 download:
   organism: "Escherichia coli"  # Solo documentación
-  taxid: "562"                  # NCBI Taxonomy ID (REQUERIDO)
+  taxid: "562"                  # NCBI Taxonomy ID 
 
   # Niveles de ensamblaje a descargar
   # Opciones: complete, chromosome, scaffold, contig
   assembly_levels:
     - "complete"
-    # - "chromosome"  
+  
+
 
   # Directorio de salida
   outdir: "data/raw/genomes"
 
   # Opcional: limitar número de genomas (testing)
-  # max_genomes: 100  # Descomentar para limitar
+  max_genomes: 100  # Descomentar para limitar
 
 # ============================================
 # ANOTACIÓN CON PROKKA (solo modo full)
@@ -55,8 +56,7 @@ prokka:
 # PANAROO - Inferencia del pangenoma (solo modo full)
 # ============================================
 panaroo:
-  # Modos de operación
-  mode: "moderate"              # strict, moderate, relaxed
+  # Modo de limpieza (el único modo que usa Panaroo)
   clean_mode: "sensitive"       # strict, moderate, sensitive (paper:sensitive)
 
   # Clustering de genes
@@ -150,7 +150,7 @@ phylogeny:
 # ============================================
 outputs:
   generate_database: false      # Crear base de datos SQL
-  generate_clusters: true       # Generar archivos por cluster
+  generate_clusters: false      # Generar archivos por cluster (desactivado para testing Prokka)
   generate_reports: false       # Generar informe HTML
 
 # ============================================
