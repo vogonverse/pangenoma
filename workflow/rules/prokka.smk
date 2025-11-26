@@ -4,15 +4,28 @@
 from pathlib import Path
 
 def get_downloaded_genomes():
-    """List of downloaded genomes"""
-    genomes_dir = Path("data/raw/genomes/genomes")
-    if not genomes_dir.exists():
-        return []
+    """
+    List of downloaded genomes from accessions file.
+    This ensures we only process genomes that were actually downloaded
+    according to max_genomes limit.
+    """
+    accessions_file = Path("data/raw/genomes/accessions_filtered.txt")
 
-    accessions = []
-    for d in genomes_dir.iterdir():
-        if d.is_dir() and list(d.glob("*.fna")):
-            accessions.append(d.name)
+    # If accessions file doesn't exist yet (dry-run), scan directory
+    if not accessions_file.exists():
+        genomes_dir = Path("data/raw/genomes/genomes")
+        if not genomes_dir.exists():
+            return []
+
+        accessions = []
+        for d in genomes_dir.iterdir():
+            if d.is_dir() and list(d.glob("*.fna")):
+                accessions.append(d.name)
+        return accessions
+
+    # Read from accessions file (authoritative source)
+    with open(accessions_file) as f:
+        accessions = [line.strip() for line in f if line.strip()]
 
     return accessions
 
