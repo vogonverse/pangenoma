@@ -11,9 +11,9 @@ rule identify_coincident_genes:
     input:
         importance = "results/random_forest/imp.csv"
     output:
-        coincident = "results/phylogeny/coincident_nodes_in.csv"
+        coincident = "results/statistics/coincident_nodes_in.csv"
     log:
-        "logs/phylogeny/identify_genes.log"
+        "logs/statistics/identify_genes.log"
     conda:
         "../../envs/py.yml"
     script:
@@ -29,7 +29,7 @@ rule calculate_d_statistic:
       - D > -1: phylogenetically overdispersed
     """
     input:
-        coincident = "results/phylogeny/coincident_nodes_in.csv",
+        coincident = "results/statistics/coincident_nodes_in.csv",
         phylogeny = lambda wildcards: (
             config["input"]["phylogeny"]
             if config["input"]["phylogeny"] is not None
@@ -37,12 +37,12 @@ rule calculate_d_statistic:
         ),
         matrix = "data/interim/collapsed_matrix.csv"
     output:
-        d_stats = "results/phylogeny/d_statistics.tsv"
+        d_stats = "results/statistics/d_statistics.tsv"
     params:
         cores = config["phylogeny"]["cores"],
-        output_prefix = "results/phylogeny/d"
+        output_prefix = "results/statistics/d"
     log:
-        "logs/phylogeny/calculate_d.log"
+        "logs/statistics/calculate_d.log"
     threads: config["phylogeny"]["cores"]
     conda:
         "../../envs/r.yml"
@@ -55,11 +55,11 @@ rule summarize_d_statistics:
     Creates a text report with distribution and interpretation.
     """
     input:
-        d_stats = "results/phylogeny/d_statistics.tsv"
+        d_stats = "results/statistics/d_statistics.tsv"
     output:
-        summary = "results/phylogeny/d_summary.txt"
+        summary = "results/statistics/d_summary.txt"
     log:
-        "logs/phylogeny/summarize_d.log"
+        "logs/statistics/summarize_d.log"
     conda:
         "../../envs/py.yml"
     script:

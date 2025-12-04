@@ -10,7 +10,7 @@ input:
   gene_presence_absence: "results/panaroo/gene_presence_absence.csv"
 
   # Filogenia (requerida solo si phylogeny.skip = false)
-  phylogeny: #null  # "results/phylogeny/strain_phylogeny.tree" .nwk 
+  phylogeny: null  # "results/phylogeny/strain_phylogeny.tree" .nwk 
 
 # ============================================
 # DESCARGA DE GENOMAS
