@@ -94,6 +94,18 @@ if (length(remove)>0) {
 
 ####IAMHERE!!!!!!!!####
 
+# DEBUG: Print diagnostic information
+print("=== DIAGNOSTIC INFO ===")
+print(paste("Number of tree tips:", length(treeRt$tip.label)))
+print(paste("Number of annot rows:", nrow(annot)))
+print("First 5 tree tip labels:")
+print(head(treeRt$tip.label, 5))
+print("First 5 annot rownames:")
+print(head(rownames(annot), 5))
+print("First 5 annot$Id:")
+print(head(annot$Id, 5))
+print(paste("Names in common:", sum(annot$Id %in% treeRt$tip.label)))
+print("======================")
 
 #Make comparative data object
 dataset <- comparative.data(phy = treeRt,
