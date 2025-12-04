@@ -73,6 +73,8 @@ annot[,1:3] <- NULL
 #genepa <- NULL
 annot <- t(annot)
 annot <- as.data.frame(annot)
+# Aplicar make.names() a los rownames para que coincidan con los tips del árbol
+rownames(annot) <- make.names(rownames(annot))
 annot$Id <- rownames(annot)
 #Double check that each column has 2 states
 remove <- vector()
