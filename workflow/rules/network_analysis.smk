@@ -42,7 +42,8 @@ rule filter_network:
     """
     input:
         network = "results/networks/directed_network.csv",
-        nodes = "results/database/nodes_table.csv"
+        nodes = "results/database/nodes_table.csv",
+        d_stats = "results/statistics/d_statistics.tsv"  # Required: D statistic must be calculated first
     output:
         filtered = "results/networks/filtered_network.csv"
     params:
@@ -60,7 +61,8 @@ rule extract_clusters:
     Extract gene clusters from network.
     """
     input:
-        network = "results/networks/directed_network.csv"
+        network = "results/networks/directed_network.csv",
+        d_stats = "results/statistics/d_statistics.tsv"  # Required: D statistic must be calculated first
     output:
         clusters_dir = directory("results/clusters"),
         flag = "results/clusters/.done"
@@ -81,7 +83,7 @@ rule expand_non_unique:
     input:
         network = "results/networks/directed_network.csv",
         groups = "data/interim/non_unique_genes.csv",
-        d_table = "results/phylogeny/d_statistics.tsv"
+        d_table = "results/statistics/d_statistics.tsv"
     output:
         expanded = "results/networks/expanded_network.csv"
     params:
