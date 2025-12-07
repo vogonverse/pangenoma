@@ -139,8 +139,8 @@ phylogeny:
 # OUTPUTS
 # ============================================
 outputs:
-  generate_database: false      # Crear base de datos SQL
-  generate_clusters: false      # Generar archivos por cluster (desactivado para testing Prokka)
+  generate_database: true       # Crear base de datos SQL
+  generate_clusters: true       # Generar archivos por cluster
   generate_reports: false       # Generar informe HTML
 
 # ============================================
