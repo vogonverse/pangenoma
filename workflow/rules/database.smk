@@ -11,7 +11,8 @@ rule describe_nodes:
     """
     input:
         performance = "results/random_forest/performance.csv",
-        d_stats = "results/phylogeny/d_statistics.tsv"
+        d_stats = "results/statistics/d_statistics.tsv",  # Fixed path
+        clusters = "results/clusters/.done"  # Required: clusters must be generated first
     output:
         nodes = "results/database/nodes_table.csv"
     log:
