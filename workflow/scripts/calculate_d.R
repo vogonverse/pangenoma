@@ -23,6 +23,8 @@ genes  <- read.csv(snakemake@input[["coincident"]], check.names=TRUE)
 
 #Read in tree
 tree <- read.tree(opt$phylogeny)
+# Apply same transformation as CSV headers: convert dots to underscores, then make.names()
+tree$tip.label <- gsub("[.]", "_", tree$tip.label)
 tree$tip.label <- make.names(tree$tip.label) #ensure tree tip names will match annot rownames
 #Ensure no zero branch lengths
 if (!is.na(match(0, tree$edge.length))) {
