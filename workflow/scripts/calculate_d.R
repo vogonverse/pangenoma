@@ -19,7 +19,9 @@ opt <- list(
 )
 
 #Read in
-genes  <- read.csv(snakemake@input[["coincident"]], check.names=TRUE)
+genes_df  <- read.csv(snakemake@input[["coincident"]], check.names=TRUE)
+# Extract the gene_id column as a vector (not the column names)
+genes <- genes_df$gene_id
 
 #Read in tree
 tree <- read.tree(opt$phylogeny)
@@ -54,7 +56,7 @@ while(TRUE) {
     break #file done
   }
   line.sp = strsplit(line,",") #split line into list
-  if (line.sp[[1]][1] %in% names(genes)) {
+  if (line.sp[[1]][1] %in% genes) {
     print(line.sp[[1]][1]) #its a gene of interest, keep around
     if (flag == 1) {
       annot[1,] <- as.character(line.sp[[1]])
@@ -136,7 +138,9 @@ mkWorker <- function(dataset) {
   #Define function
   calcD <- function(dataset, binvarry) {
     if(binvarry != "Id") {
-      result <- eval(parse(text=paste("caper::phylo.d(data=dataset, binvar=",binvarry,", permut=1000)", sep="")))
+      # Escape the variable name with backticks to handle special characters like ~
+      escaped_var <- paste("`", binvarry, "`", sep="")
+      result <- eval(parse(text=paste("caper::phylo.d(data=dataset, binvar=",escaped_var,", permut=1000)", sep="")))
       line <- paste(binvarry,result$DEstimate, sep="\t")
       locked_towrite <- flock::lock("./.lock")
       write(line,file=outstr,append=TRUE)
