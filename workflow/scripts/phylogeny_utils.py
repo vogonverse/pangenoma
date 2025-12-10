@@ -20,10 +20,15 @@ def identify_coincident_genes(importance_file, output_file, log_file):
     # Identify genes with at least one importance > 0
     genes_with_importance = imp.columns[imp.sum(axis=0) > 0].tolist()
 
-    # Save as CSV
+    # Save as CSV with header
+    # Extract only the gene ID (first field before first comma)
     with open(output_file, 'w') as f:
+        f.write('gene_id\n')  # Add header
         for gene in genes_with_importance:
-            f.write(gene + '\n')
+            # Gene names in imp.csv are like "group_12734,nan,hypothetical protein"
+            # But collapsed_matrix.csv only has "group_12734", so extract just the ID
+            gene_id = gene.split(',')[0]
+            f.write(gene_id + '\n')
 
     # Log
     message = f' {len(genes_with_importance)} genes identified\n Coincident genes identified'
