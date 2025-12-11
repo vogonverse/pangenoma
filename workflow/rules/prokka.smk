@@ -65,13 +65,20 @@ rule prokka_annotate:
 # ============================================
 #  Ensure all GFFs are registered
 # ============================================
+
+def get_all_gff_markers(wildcards):
+    """Get all GFF markers after download checkpoint completes"""
+    # This function is called after the download checkpoint
+    checkpoints.download_genomes.get()
+    
+    # Now get_downloaded_genomes() will return the actual list
+    accessions = get_downloaded_genomes()
+    return expand("results/prokka/{accession}/.gff_registered", accession=accessions)
+
 rule ensure_all_gffs_registered:
     """Ensure all GFFs have been added to the list file"""
     input:
-        markers = expand(
-            "results/prokka/{accession}/.gff_registered",
-            accession=get_downloaded_genomes()
-        )
+        markers = get_all_gff_markers
     output:
         done = "results/prokka/.all_gffs_registered"
     benchmark:
@@ -84,14 +91,24 @@ rule ensure_all_gffs_registered:
 # ============================================
 #  Create GFF list file
 # ============================================
+
+def get_gff_list_inputs(wildcards):
+    """Get inputs for GFF list creation after download checkpoint"""
+    # Wait for download checkpoint
+    checkpoints.download_genomes.get()
+    
+    # Get the list of genomes
+    accessions = get_downloaded_genomes()
+    
+    return {
+        "markers": expand("results/prokka/{accession}/.gff_registered", accession=accessions),
+        "done": "results/prokka/.all_gffs_registered"
+    }
+
 rule create_gff_list:
     """Create the list of GFF files for Panaroo from individual markers"""
     input:
-        markers = expand(
-            "results/prokka/{accession}/.gff_registered",
-            accession=get_downloaded_genomes()
-        ),
-        done = "results/prokka/.all_gffs_registered"
+        unpack(get_gff_list_inputs)
     output:
         gff_list = "results/prokka/gff_files.txt"
     benchmark:

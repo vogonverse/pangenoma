@@ -37,7 +37,7 @@ rule deduplicate_assemblies:
         "../scripts/filter_metadata.py"
 
 
-rule download_genomes:
+checkpoint download_genomes:
     """Download only deduplicated genomes"""
     input:
         accessions = "data/raw/genomes/accessions_filtered.txt"
