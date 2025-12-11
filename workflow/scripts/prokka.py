@@ -6,7 +6,6 @@ import subprocess
 import shutil
 from pathlib import Path
 import sys
-import fcntl
 
 def main():
     # Get parameters from Snakemake
@@ -61,27 +60,16 @@ def main():
         print(f"ERROR: GFF file not created: {gff_file}", file=sys.stderr)
         sys.exit(1)
 
-    print(f" Successfully annotated: {prefix}")
+    print(f"✅ Successfully annotated: {prefix}")
     print(f"  Output: {outdir}")
 
-    # Append GFF path to the shared list file
-    gff_list_file = Path("results/prokka/gff_files.txt")
-    gff_list_file.parent.mkdir(parents=True, exist_ok=True)
-
-    # Use file locking to prevent race conditions when multiple jobs write simultaneously
-    with open(gff_list_file, 'a') as f:
-        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-        try:
-            f.write(f"{gff_file.absolute()}\n")
-            f.flush()
-        finally:
-            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-
-    print(f"  Added to GFF list: {gff_list_file}")
-
-    # Create marker file to indicate this GFF has been registered
+    # Create marker file containing the GFF path
+    # This will be used by the create_gff_list rule to generate gff_files.txt
     marker_file = Path(snakemake.output.marker)
+    marker_file.parent.mkdir(parents=True, exist_ok=True)
     marker_file.write_text(f"{gff_file.absolute()}\n")
+    
+    print(f"  Created marker: {marker_file}")
 
 if __name__ == "__main__":
     main()

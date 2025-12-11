@@ -80,3 +80,34 @@ rule ensure_all_gffs_registered:
         from pathlib import Path
         # All marker files exist, meaning all GFFs have been written to gff_files.txt
         Path(output.done).write_text("All GFF files registered\n")
+
+# ============================================
+#  Create GFF list file
+# ============================================
+rule create_gff_list:
+    """Create the list of GFF files for Panaroo from individual markers"""
+    input:
+        markers = expand(
+            "results/prokka/{accession}/.gff_registered",
+            accession=get_downloaded_genomes()
+        ),
+        done = "results/prokka/.all_gffs_registered"
+    output:
+        gff_list = "results/prokka/gff_files.txt"
+    benchmark:
+        "benchmarks/prokka/create_gff_list.tsv"
+    run:
+        from pathlib import Path
+        
+        gff_paths = []
+        for marker in input.markers:
+            # Each marker file contains the GFF path
+            gff_path = Path(marker).read_text().strip()
+            if gff_path:
+                gff_paths.append(gff_path)
+        
+        # Write all GFF paths to the list file
+        with open(output.gff_list, 'w') as f:
+            f.write('\n'.join(gff_paths) + '\n')
+        
+        print(f"Created GFF list with {len(gff_paths)} files: {output.gff_list}")
