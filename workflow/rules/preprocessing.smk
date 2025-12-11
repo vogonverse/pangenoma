@@ -20,6 +20,8 @@ rule process_matrix:
         roary_format = config["preprocessing"]["roary_format"]
     log:
         "logs/preprocessing/process_matrix.log"
+    benchmark:
+        "benchmarks/preprocessing/process_matrix.tsv"
     conda:
         "../../envs/py.yml"
     script:

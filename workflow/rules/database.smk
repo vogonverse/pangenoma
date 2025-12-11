@@ -17,6 +17,8 @@ rule describe_nodes:
         nodes = "results/database/nodes_table.csv"
     log:
         "logs/database/describe_nodes.log"
+    benchmark:
+        "benchmarks/database/describe_nodes.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -36,6 +38,8 @@ rule describe_edges:
         edges = "results/database/edges_table.csv"
     log:
         "logs/database/describe_edges.log"
+    benchmark:
+        "benchmarks/database/describe_edges.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -53,6 +57,8 @@ rule create_sql_database:
         database = "results/database/network.db"
     log:
         "logs/database/create_sql.log"
+    benchmark:
+        "benchmarks/database/create_sql_database.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -71,6 +77,8 @@ rule query_database:
         competitive = "results/database/queries/competitive_edges.csv"
     log:
         "logs/database/query_database.log"
+    benchmark:
+        "benchmarks/database/query_database.tsv"
     conda:
         "../../envs/py.yml"
     script:

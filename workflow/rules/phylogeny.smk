@@ -22,6 +22,8 @@ rule build_phylogeny:
         bootstrap = config["phylogeny_build"]["bootstrap"]
     log:
         "logs/phylogeny/build_tree.log"
+    benchmark:
+        "benchmarks/phylogeny/build_phylogeny.tsv"
     threads: config["phylogeny_build"]["threads"]
     conda:
         "../../envs/phylogeny.yml"

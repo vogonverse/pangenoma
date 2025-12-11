@@ -16,9 +16,11 @@ rule visualize_cytoscape_network:
         image = "results/networks/cytoscape_network.png"
     params:
         layout = "force-directed",  #kamada-kawai, grid, hierarchical, circular
-        resolution = 300  # image DPI
+        resolution = 600  # image DPI
     log:
         "logs/visualization/cytoscape_network.log"
+    benchmark:
+        "benchmarks/visualization/visualize_cytoscape_network.tsv"
     conda:
         "../../envs/cytoscape.yml"
     script:
@@ -39,6 +41,8 @@ rule visualize_directed_network:
         resolution = 300
     log:
         "logs/visualization/directed_network.log"
+    benchmark:
+        "benchmarks/visualization/visualize_directed_network.tsv"
     conda:
         "../../envs/cytoscape.yml"
     script:
@@ -50,5 +54,11 @@ rule visualize_all_networks:
     input:
         "results/networks/cytoscape_network.png",
         "results/networks/directed_network.png"
+    log:
+        "logs/visualization/all_networks.log"
+    benchmark:
+        "benchmarks/visualization/visualize_all_networks.tsv"
+    conda:
+        "../../envs/cytoscape.yml"
     shell:
-        "All network visualizations completed!"
+        "echo 'All network visualizations completed!'"

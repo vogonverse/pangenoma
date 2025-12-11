@@ -13,6 +13,8 @@ rule convert_to_cytoscape:
         network = "results/networks/cytoscape_network.csv"
     log:
         "logs/networks/convert_cytoscape.log"
+    benchmark:
+        "benchmarks/network_analysis/convert_to_cytoscape.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -30,6 +32,8 @@ rule direct_network:
         directed = "results/networks/directed_network.csv"
     log:
         "logs/networks/direct_network.log"
+    benchmark:
+        "benchmarks/network_analysis/direct_network.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -51,6 +55,8 @@ rule filter_network:
         f1_threshold = config["filtering"]["f1_threshold"]
     log:
         "logs/networks/filter_network.log"
+    benchmark:
+        "benchmarks/network_analysis/filter_network.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -71,6 +77,8 @@ rule extract_clusters:
         edge_type = config["clustering"]["edge_type"]
     log:
         "logs/networks/extract_clusters.log"
+    benchmark:
+        "benchmarks/network_analysis/extract_clusters.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -90,6 +98,8 @@ rule expand_non_unique:
         d_min = config["filtering"]["d_threshold"]
     log:
         "logs/networks/expand_non_unique.log"
+    benchmark:
+        "benchmarks/network_analysis/expand_non_unique.tsv"
     conda:
         "../../envs/py.yml"
     script:

@@ -14,6 +14,8 @@ rule identify_coincident_genes:
         coincident = "results/statistics/coincident_nodes_in.csv"
     log:
         "logs/statistics/identify_genes.log"
+    benchmark:
+        "benchmarks/statistics/identify_coincident_genes.tsv"
     conda:
         "../../envs/py.yml"
     script:
@@ -43,6 +45,8 @@ rule calculate_d_statistic:
         output_prefix = "results/statistics/d"
     log:
         "logs/statistics/calculate_d.log"
+    benchmark:
+        "benchmarks/statistics/calculate_d_statistic.tsv"
     threads: config["phylogeny"]["cores"]
     conda:
         "../../envs/r.yml"
@@ -60,6 +64,8 @@ rule summarize_d_statistics:
         summary = "results/statistics/d_summary.txt"
     log:
         "logs/statistics/summarize_d.log"
+    benchmark:
+        "benchmarks/statistics/summarize_d_statistics.tsv"
     conda:
         "../../envs/py.yml"
     script:

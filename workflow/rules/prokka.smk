@@ -74,6 +74,8 @@ rule ensure_all_gffs_registered:
         )
     output:
         done = "results/prokka/.all_gffs_registered"
+    benchmark:
+        "benchmarks/prokka/ensure_all_gffs_registered.tsv"
     run:
         from pathlib import Path
         # All marker files exist, meaning all GFFs have been written to gff_files.txt

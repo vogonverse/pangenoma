@@ -23,6 +23,8 @@ rule run_random_forest:
         output_dir = "results/random_forest"
     log:
         "logs/random_forest/panforest.log"
+    benchmark:
+        "benchmarks/random_forest/run_random_forest.tsv"
     threads: config["random_forest"]["n_threads"]
     conda:
         "../../envs/py.yml"
@@ -41,6 +43,8 @@ rule simplify_importance_matrix:
         threshold = config["network"]["importance_threshold"]
     log:
         "logs/random_forest/simplify_imp.log"
+    benchmark:
+        "benchmarks/random_forest/simplify_importance_matrix.tsv"
     conda:
         "../../envs/py.yml"
     script:
