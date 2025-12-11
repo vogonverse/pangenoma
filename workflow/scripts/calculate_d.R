@@ -5,6 +5,14 @@ library(flock)
 library(stringr)
 
 # ============================================
+# Clean up any stale lock file
+# ============================================
+if (file.exists("./.lock")) {
+  cat("Warning: Removing stale .lock file\n")
+  file.remove("./.lock")
+}
+
+# ============================================
 # Configuración desde Snakemake
 # ============================================
 # Cuando se usa la directiva script:, Snakemake inyecta automáticamente

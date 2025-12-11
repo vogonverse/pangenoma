@@ -54,6 +54,8 @@ rule visualize_all_networks:
     input:
         "results/networks/cytoscape_network.png",
         "results/networks/directed_network.png"
+    output:
+        done = "results/networks/.visualizations_done"
     log:
         "logs/visualization/all_networks.log"
     benchmark:
@@ -61,4 +63,4 @@ rule visualize_all_networks:
     conda:
         "../../envs/cytoscape.yml"
     shell:
-        "echo 'All network visualizations completed!'"
+        "touch {output.done}"
