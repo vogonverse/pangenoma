@@ -48,6 +48,9 @@ rule calculate_d_statistic:
     benchmark:
         "benchmarks/statistics/calculate_d_statistic.tsv"
     threads: config["phylogeny"]["cores"]
+    resources:
+        mem_mb = 32000,  # 32 GB for many genes
+        runtime = 480    # 8 hours (inflated for first run)
     conda:
         "../../envs/r.yml"
     script:

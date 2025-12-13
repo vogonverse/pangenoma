@@ -55,7 +55,8 @@ rule prokka_annotate:
         "benchmarks/prokka/{accession}.tsv"
     threads: config["prokka"]["threads"]
     resources:
-        mem_mb = config["prokka"]["mem_mb"]
+        mem_mb = config["prokka"]["mem_mb"],
+        runtime = 120  # 2 hours per genome (inflated for first run)
 
     conda:
         "../../envs/prokka.yml"

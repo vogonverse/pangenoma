@@ -26,6 +26,9 @@ rule run_random_forest:
     benchmark:
         "benchmarks/random_forest/run_random_forest.tsv"
     threads: config["random_forest"]["n_threads"]
+    resources:
+        mem_mb = 128000,  # 128 GB for large matrices
+        runtime = 2880    # 48 hours (inflated for first run with many genomes)
     conda:
         "../../envs/py.yml"
     script:

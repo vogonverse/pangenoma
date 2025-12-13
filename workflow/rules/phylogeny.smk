@@ -25,6 +25,9 @@ rule build_phylogeny:
     benchmark:
         "benchmarks/phylogeny/build_phylogeny.tsv"
     threads: config["phylogeny_build"]["threads"]
+    resources:
+        mem_mb = 32000,  # 32 GB for large alignments
+        runtime = 720    # 12 hours (inflated for first run)
     conda:
         "../../envs/phylogeny.yml"
     script:
