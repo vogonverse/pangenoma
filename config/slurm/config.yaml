@@ -1,0 +1,45 @@
+# Snakemake SLURM Profile Configuration
+# ============================================
+
+# Executor
+executor: slurm
+
+# Maximum number of simultaneous jobs
+jobs: 100
+
+# Default resources for all rules (can be overridden per rule)
+default-resources:
+  - runtime=60
+  - mem_mb=4000
+
+# Restart times for failed jobs
+restart-times: 0
+
+# Latency wait (seconds to wait for output files to appear)
+latency-wait: 60
+
+# Keep going with independent jobs if some fail
+keep-going: True
+
+# Rerun incomplete jobs
+rerun-incomplete: True
+
+# Print shell commands
+printshellcmds: True
+
+# Use conda environments
+use-conda: True
+
+# Conda frontend
+conda-frontend: mamba
+
+# Local cores for non-SLURM rules (lightweight rules on login node)
+local-cores: 1
+
+# Maximum status checks per second
+max-status-checks-per-second: 10
+
+# Cluster configuration
+cluster: "python3 config/slurm/slurm-submit.py"
+cluster-status: "python3 config/slurm/slurm-status.py"
+cluster-cancel: "scancel"
