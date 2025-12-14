@@ -17,6 +17,10 @@ results/
 data/interim/*
 data/final/*
 
+# Random Forest batch processing
+data/interim/rf_batches/
+results/random_forest/batches/
+
 # Keep directory structure
 !results/.gitkeep
 !data/interim/.gitkeep
