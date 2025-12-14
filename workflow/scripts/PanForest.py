@@ -119,6 +119,9 @@ if __name__ == "__main__":
         null_h = False  # Not used in workflow
         nthreads = snakemake.params.n_threads
         checkpoint = 0  # Start from beginning
+        
+        # Check if gene list is provided (for batch processing)
+        gene_list_file = getattr(snakemake.input, 'gene_list', None)
 
         # Create output directory if needed
         if not os.path.exists(output):
@@ -131,6 +134,29 @@ if __name__ == "__main__":
         min_present_count = math.ceil(min_present * total_genomes/100)
 
         table = rf.preprocess_df(table, null_h, min_missing, min_present_count)
+        
+        # Filter genes if gene list provided (batch processing)
+        if gene_list_file:
+            print(f"\n📋 Batch processing mode: filtering genes from {gene_list_file}")
+            with open(gene_list_file, 'r') as f:
+                genes_to_process = [line.strip() for line in f if line.strip()]
+            
+            # Filter table to only include genes to process as ROWS (targets)
+            # But keep ALL genes as COLUMNS (features)
+            print(f"  Genes to process in this batch: {len(genes_to_process)}")
+            print(f"  Total genes in matrix (features): {len(table.columns)}")
+            
+            # Only process genes that are in both the list and the table
+            genes_to_process = [g for g in genes_to_process if g in table.columns]
+            print(f"  Genes found in matrix: {len(genes_to_process)}")
+            
+            if not genes_to_process:
+                raise ValueError("No genes from batch list found in matrix!")
+        else:
+            # Process all genes (original behavior)
+            genes_to_process = None
+            print(f"\n📋 Processing all {len(table.columns)} genes")
+        
         imp, performance = rf.init_tables(table)
 
         # Randomise genome order
@@ -138,7 +164,7 @@ if __name__ == "__main__":
         table = table[random.sample(list(table.columns), n_s)]
         results = rf.fit_classifiers(table, [imp, performance],
                                      [ntrees, depth, purity, nthreads],
-                                     output, checkpoint)
+                                     output, checkpoint, genes_to_process)
         results[0].round(5).to_csv(output + "/imp.csv")
         results[1].round(5).to_csv(output + "/performance.csv")
 

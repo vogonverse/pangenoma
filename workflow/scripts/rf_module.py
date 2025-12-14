@@ -129,11 +129,12 @@ def update_performance(table, i, y_sets):
     table['Fte'][i] = test_report['macro avg']['f1-score']
 
 
-def fit_classifiers(table, results, params, output, checkpoint):
+def fit_classifiers(table, results, params, output, checkpoint, genes_to_process=None):
     """
-    Fit a random forest classifier for all genes.
+    Fit a random forest classifier for all genes (or subset if genes_to_process provided).
     results = [imp, performance]
     params = [ntrees, depth, purity, nthreads]
+    genes_to_process = list of gene names to process (None = all genes)
     """
     n_g = table.shape[0]
     table = table.transpose() #I think this is easier transposed
@@ -142,8 +143,19 @@ def fit_classifiers(table, results, params, output, checkpoint):
         results[0] = pd.read_csv(output +"/imp.csv", header = 0, index_col = 0)
         results[1] = pd.read_csv(output + "/performance.csv", header = 0, index_col = 0)
         start = checkpoint
+    
+    # Determine which genes to process
+    if genes_to_process is not None:
+        # Batch processing: only process specified genes
+        # Find indices of genes to process
+        gene_indices = [i for i, gene in enumerate(table.columns) if gene in genes_to_process]
+        print(f"\n📋 Batch mode: processing {len(gene_indices)} genes out of {n_g} total")
+    else:
+        # Process all genes (original behavior)
+        gene_indices = range(start, n_g)
+        print(f"\n📋 Processing all {n_g} genes")
 
-    for i in range(start, n_g):
+    for i in gene_indices:
         print("gene number\t" + str(i+1) + "\tout of\t" + str(n_g))
         y_all = table[table.columns[i]]
         x_all = table.drop([table.columns[i]], axis = 1)
