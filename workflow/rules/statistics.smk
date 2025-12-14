@@ -47,10 +47,10 @@ rule calculate_d_statistic:
         "logs/statistics/calculate_d.log"
     benchmark:
         "benchmarks/statistics/calculate_d_statistic.tsv"
-    threads: config["phylogeny"]["cores"]
+    threads: 32  # Máxima paralelización efectiva (R paralelo con 32 cores)
     resources:
-        mem_mb = 32000,  # 32 GB for many genes
-        runtime = 480    # 8 hours (inflated for first run)
+        mem_mb = 128000,  # 128 GB para máxima holgura (miles de genes × 6,252 genomas)
+        runtime = 1440    # 24 horas (muy inflado para primera ejecución)
     conda:
         "../../envs/r.yml"
     script:

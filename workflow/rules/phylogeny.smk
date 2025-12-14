@@ -24,10 +24,10 @@ rule build_phylogeny:
         "logs/phylogeny/build_tree.log"
     benchmark:
         "benchmarks/phylogeny/build_phylogeny.tsv"
-    threads: config["phylogeny_build"]["threads"]
+    threads: 32  # Máxima paralelización efectiva (IQ-TREE escala bien hasta 32 cores)
     resources:
-        mem_mb = 32000,  # 32 GB for large alignments
-        runtime = 720    # 12 hours (inflated for first run)
+        mem_mb = 128000,  # 128 GB para máxima holgura (alineamiento de 6,252 genomas)
+        runtime = 1440    # 24 horas (inflated for first run)
     conda:
         "../../envs/phylogeny.yml"
     script:

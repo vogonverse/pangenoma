@@ -43,8 +43,8 @@ rule run_panaroo:
     threads:
         config["panaroo"]["threads"]
     resources:
-        mem_mb = 64000,  # 64 GB for large genome sets
-        runtime = 480    # 8 hours (inflated for first run)
+        mem_mb = 256000,  # 256 GB for very large genome sets (6,252 genomes)
+        runtime = 960     # 16 hours (inflated for first run)
     log:
         "logs/panaroo/run_panaroo.log"
     benchmark:
