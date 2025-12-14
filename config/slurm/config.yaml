@@ -1,6 +1,5 @@
 # Snakemake SLURM Profile Configuration
 # ============================================
-# For Snakemake 8+ with native SLURM executor
 
 # Executor
 executor: slurm
@@ -39,3 +38,8 @@ local-cores: 1
 
 # Maximum status checks per second
 max-status-checks-per-second: 10
+
+# Cluster configuration
+cluster: "python3 config/slurm/slurm-submit.py"
+cluster-status: "python3 config/slurm/slurm-status.py"
+cluster-cancel: "scancel"
