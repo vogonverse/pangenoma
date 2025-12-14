@@ -74,7 +74,7 @@ if __name__ == "__main__":
         snakemake
         split_genes_for_rf(
             matrix_file=snakemake.input.matrix,
-            output_dir=snakemake.output[0],
+            output_dir=snakemake.params.output_dir,
             n_batches=snakemake.params.n_batches,
             log_file=snakemake.log[0]
         )

@@ -10,9 +10,11 @@ rule split_genes_for_rf:
     input:
         matrix = "data/interim/collapsed_matrix.csv"
     output:
-        batch_dir = directory("data/interim/rf_batches/")
+        batches = expand("data/interim/rf_batches/batch_{batch}.txt",
+                        batch=range(config["random_forest"]["n_batches"]))
     params:
-        n_batches = config["random_forest"]["n_batches"]
+        n_batches = config["random_forest"]["n_batches"],
+        output_dir = "data/interim/rf_batches"
     log:
         "logs/random_forest/split_genes.log"
     conda:
