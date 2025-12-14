@@ -69,15 +69,6 @@ panaroo:
   threads: 32                   # Máxima paralelización (optimizado de 8 a 32)
 
 # ============================================
-# CONSTRUCCIÓN FILOGENÉTICA
-# ============================================
-phylogeny_build:
-  method: "iqtree"              # Método para construir árbol
-  model: "MFP"                  # Modelo evolutivo (MFP = auto-select)
-  bootstrap: 1000               # Número de bootstraps
-  threads: 8
-
-# ============================================
 # PREPROCESAMIENTO
 # ============================================
 preprocessing:
@@ -127,12 +118,24 @@ clustering:
   edge_type: null               # null = ambos tipos de edges
 
 # ============================================
+# CONSTRUCCIÓN FILOGENÉTICA
+# ============================================
+phylogeny_build:
+  method: "iqtree"              # Método para construir árbol
+  model: "MFP"                  # Modelo evolutivo (MFP = auto-select)
+  bootstrap: 1000               # Número de bootstraps
+  threads: 32                   # Máxima paralelización
+
+# ============================================
 # ANÁLISIS FILOGENÉTICO (estadístico D)
 # ============================================
 phylogeny:
   skip: false              # true = saltar análisis D
   cores: 4                      # Cores paralelizar
   d_permutations: 1000          # Permutaciones para test D
+  
+  # Multi-nodo (batch processing for D statistic)
+  n_batches: 10                 # Número de jobs paralelos (~10x speedup)
 
   # Filtros para calcular D (solo genes bien predichos)
   f1_threshold: 0.9             # F1 > 0.9 en ambas clases

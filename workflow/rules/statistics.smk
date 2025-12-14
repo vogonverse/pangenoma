@@ -21,9 +21,30 @@ rule identify_coincident_genes:
     script:
         "../scripts/phylogeny_utils.py"
 
-rule calculate_d_statistic:
+rule split_genes_for_d_stat:
     """
-    Calculates Fritz & Purvis D statistic for all previously identified genes.
+    Split coincident genes into batches for parallel D statistic calculation.
+    """
+    input:
+        coincident = "results/statistics/coincident_nodes_in.csv"
+    output:
+        batches = expand("data/interim/d_stat_batches/batch_{batch}.csv",
+                        batch=range(config["phylogeny"]["n_batches"]))
+    params:
+        n_batches = config["phylogeny"]["n_batches"],
+        output_dir = "data/interim/d_stat_batches"
+    log:
+        "logs/statistics/split_genes_d_stat.log"
+    conda:
+        "../../envs/py.yml"
+    script:
+        "../scripts/split_genes_for_d_stat.py"
+
+
+rule calculate_d_statistic_batch:
+    """
+    Calculate D statistic for a batch of genes.
+    Each batch processes a subset of genes but uses the same phylogeny and matrix.
     D measures phylogenetic signal:
       - D ~  1: random/no phylogenetic signal
       - D ~  0: Brownian motion (neutral evolution)
@@ -31,7 +52,7 @@ rule calculate_d_statistic:
       - D > -1: phylogenetically overdispersed
     """
     input:
-        coincident = "results/statistics/coincident_nodes_in.csv",
+        gene_list = "data/interim/d_stat_batches/batch_{batch}.csv",
         phylogeny = lambda wildcards: (
             config["input"]["phylogeny"]
             if config["input"]["phylogeny"] is not None
@@ -39,22 +60,41 @@ rule calculate_d_statistic:
         ),
         matrix = "data/interim/collapsed_matrix.csv"
     output:
-        d_stats = "results/statistics/d_statistics.tsv"
+        d_stats = "results/statistics/batches/d_stat_{batch}.tsv"
     params:
         cores = config["phylogeny"]["cores"],
-        output_prefix = "results/statistics/d"
+        output_prefix = "results/statistics/batches/d_{batch}"
     log:
-        "logs/statistics/calculate_d.log"
+        "logs/statistics/d_stat_batch_{batch}.log"
     benchmark:
-        "benchmarks/statistics/calculate_d_statistic.tsv"
-    threads: 32  # Máxima paralelización efectiva (R paralelo con 32 cores)
+        "benchmarks/statistics/d_stat_batch_{batch}.tsv"
+    threads: 4  # R parallel processing
     resources:
-        mem_mb = 128000,  # 128 GB para máxima holgura (miles de genes × 6,252 genomas)
-        runtime = 1440    # 24 horas (muy inflado para primera ejecución)
+        mem_mb = 16000,   # 16 GB per batch (less than single-node 128 GB)
+        runtime = 120     # 2 hours per batch
     conda:
         "../../envs/r.yml"
     script:
-        "../scripts/calculate_d.R"
+        "../scripts/calculate_d_batch.R"
+
+
+rule merge_d_statistics:
+    """
+    Merge D statistic batch results into complete table.
+    """
+    input:
+        d_stats = expand("results/statistics/batches/d_stat_{batch}.tsv",
+                        batch=range(config["phylogeny"]["n_batches"]))
+    output:
+        d_stats = "results/statistics/d_statistics.tsv"
+    log:
+        "logs/statistics/merge_d_statistics.log"
+    benchmark:
+        "benchmarks/statistics/merge_d_statistics.tsv"
+    conda:
+        "../../envs/py.yml"
+    script:
+        "../scripts/merge_d_statistics.py"
 
 rule summarize_d_statistics:
     """
