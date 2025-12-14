@@ -66,7 +66,7 @@ panaroo:
   merge_paralogs: false         # Fusionar parálogos en un solo cluster
 
   # Recursos
-  threads: 8
+  threads: 32                   # Máxima paralelización (optimizado de 8 a 32)
 
 # ============================================
 # CONSTRUCCIÓN FILOGENÉTICA
@@ -92,14 +92,17 @@ preprocessing:
 # ============================================
 random_forest:
   # Parámetros del modelo
-  n_trees: 100                  # TEST: 100, PAPER: 1000
+  n_trees: 1000                 # PAPER: 1000 árboles (máxima precisión)
   max_depth: 8                  # Profundidad máxima del árbol (paper:8)
   min_present: 1.0              # % mínimo de presencia
   min_absent: 1.0               # % mínimo de ausencia
   purity: null                  # null = usar max_depth para stopping
 
   # Paralelización
-  n_threads: 4
+  n_threads: 32                 # Máxima paralelización (32 cores para velocidad óptima)
+  
+  # Multi-nodo (batch processing)
+  n_batches: 10                 # Número de jobs paralelos (10 = ~10x speedup)
 
 # ============================================
 # NETWORK ANALYSIS
