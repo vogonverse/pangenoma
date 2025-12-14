@@ -21,6 +21,10 @@ data/final/*
 data/interim/rf_batches/
 results/random_forest/batches/
 
+# D Statistic batch processing
+data/interim/d_stat_batches/
+results/statistics/batches/
+
 # Keep directory structure
 !results/.gitkeep
 !data/interim/.gitkeep
